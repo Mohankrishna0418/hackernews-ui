@@ -1,27 +1,93 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { betterAuthClient } from "@/lib/integrations/better-auth";
 
-const NavigationBar = () => {
+interface NavigationBarProps {
+  hideNavItems?: boolean;
+}
+
+const navItems = [
+  { label: "new", path: "/new" },
+  { label: "past", path: "/past" },
+  { label: "comments", path: "/comments" },
+  { label: "ask", path: "/ask" },
+  { label: "show", path: "/show" },
+  { label: "jobs", path: "/jobs" },
+  { label: "submit", path: "/submit" },
+];
+
+const NavigationBar: React.FC<NavigationBarProps> = ({
+  hideNavItems = false,
+}) => {
   const router = useRouter();
+  const { data } = betterAuthClient.useSession();
+  const user = data?.user;
+
+  const handleNavigation = (path: string) => {
+    router.push(path);
+  };
+
+  const handleSignOut = async () => {
+    await betterAuthClient.signOut();
+    router.push("/");
+  };
 
   return (
-    <div className="container mx-auto px-6 py-4 bg-amber-50 rounded-xl shadow-sm">
-      <div className="flex justify-between items-center border-b-2 border-amber-800 pb-4 mb-4">
-        <Link
-          href="/"
-          className="text-2xl font-extrabold text-amber-900 tracking-wide"
-        >
-          Hacker News
-        </Link>
-        <button
-          onClick={() => router.push("/auth/sign-in")}
-          className="bg-amber-900 text-white px-4 py-2 rounded-lg hover:bg-amber-800 transition"
-        >
-          Log in
-        </button>
+    <div className="bg-orange-600 text-black text-sm w-[1200px] mx-auto my-2">
+      <div className="max-w-screen-xl mx-auto px-2 py-1 flex justify-between items-center">
+        {/* Left side */}
+        <div className="flex items-center gap-2">
+          <span className="bg-orange-700 text-white font-bold px-1 cursor-pointer">
+            {user?.name?.charAt(0).toUpperCase() || "Y"}
+          </span>
+          <span
+            onClick={() => handleNavigation("/")}
+            className="font-bold cursor-pointer"
+          >
+            Hacker News
+          </span>
+          {!hideNavItems && (
+            <span className="ml-2 space-x-1">
+              {navItems.map((item, index) => (
+                <React.Fragment key={item.label}>
+                  <button
+                    onClick={() => handleNavigation(item.path)}
+                    className="cursor-pointer hover:underline"
+                  >
+                    {item.label}
+                  </button>
+                  {index < navItems.length - 1 && <span>|</span>}
+                </React.Fragment>
+              ))}
+            </span>
+          )}
+        </div>
+
+        {/* Right side */}
+        <div className="flex items-center gap-2">
+          {!hideNavItems &&
+            (user ? (
+              <>
+                <span>{user.name} (1)</span>
+                <span>|</span>
+                <button
+                  onClick={handleSignOut}
+                  className="hover:underline cursor-pointer"
+                >
+                  logout
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => handleNavigation("/login")}
+                className="hover:underline cursor-pointer"
+              >
+                login
+              </button>
+            ))}
+        </div>
       </div>
     </div>
   );
