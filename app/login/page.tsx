@@ -1,3 +1,4 @@
+// app/login/page.tsx
 "use client";
 
 import { betterAuthClient } from "@/lib/integrations/better-auth";
@@ -34,51 +35,50 @@ const LoginPage = () => {
     <>
       <NavigationBar hideNavItems />
       {!data?.user && (
-        <div className="flex justify-center items-center min-h-screen w-[1200px] mx-auto ">
-          <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
-            <h2 className="text-2xl font-bold text-center text-amber-900 mb-6">Log In</h2>
+        <div className="max-w-md mx-auto py-10">
+          <h3 className="font-bold mb-4">Login</h3>
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <label className="w-24">Username:</label>
+              <input
+                type="text"
+                name="username"
+                value={loginData.username}
+                onChange={handleChange}
+                className="border border-gray-400 text-sm p-1 flex-1"
+              />
+            </div>
+            <div className="flex items-center">
+              <label className="w-24">Password:</label>
+              <input
+                type="password"
+                name="password"
+                value={loginData.password}
+                onChange={handleChange}
+                className="border border-gray-400 text-sm p-1 flex-1"
+              />
+            </div>
+            <button
+              onClick={handleLogin}
+              className="mt-2 border px-2 py-1 bg-gray-200 hover:bg-gray-300"
+            >
+              Login
+            </button>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Username</label>
-                <input
-                  type="text"
-                  name="username"
-                  value={loginData.username}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
+            <div className="mt-4">
+              <a
+                href="/forgot-password"
+                className="text-blue-600 underline inline-block"
+              >
+                Forgot your password?
+              </a>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={loginData.password}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
-
-              <button
-                onClick={handleLogin}
-                className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition"              >
-                Log In
-              </button>
-
-              <div className="text-right mt-2">
-                <a href="/forgot-password" className="text-sm text-blue-600 hover:underline">
-                  Forgot your password?
-                </a>
-              </div>
-
-              <div className="text-center text-sm mt-4">
-                Don’t have an account?{" "}
-                <Link href="/sign-up" className="text-blue-600 hover:underline">
-                  Create one
-                </Link>
-              </div>
+            <div className="mt-2 text-sm">
+              Don’t have an account?{" "}
+              <Link href="/sign-up" className="text-blue-600 underline">
+                Create one
+              </Link>
             </div>
           </div>
         </div>
@@ -88,3 +88,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+ 

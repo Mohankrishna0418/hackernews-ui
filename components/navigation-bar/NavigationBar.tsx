@@ -15,7 +15,7 @@ const navItems = [
   { label: "ask", path: "/ask" },
   { label: "show", path: "/show" },
   { label: "jobs", path: "/jobs" },
-  { label: "submit", path: "/submit" },
+  { label: "create post", path: "/posts" },
 ];
 
 const NavigationBar: React.FC<NavigationBarProps> = ({
@@ -35,7 +35,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   };
 
   return (
-    <div className="bg-orange-600 text-black text-sm w-[1200px] mx-auto my-2">
+    <div className="bg-orange-600 text-black text-sm w-[1200px] mx-auto mt-2">
       <div className="max-w-screen-xl mx-auto px-2 py-1 flex justify-between items-center">
         {/* Left side */}
         <div className="flex items-center gap-2">
