@@ -23,8 +23,8 @@ const NewPostForm: React.FC = () => {
 
     try {
       const res = await fetch("http://localhost:3000/post", {
-       method: "POST",
-       credentials: "include",
+        method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           token, // sending token in the header as expected by your tokenMiddleware
@@ -41,13 +41,17 @@ const NewPostForm: React.FC = () => {
       setTitle("");
       setContent("");
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : "An unknown error occurred";
       setMessage(`Error: ${errorMessage}`);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border rounded w-[1200px] bg-[#f1f1db] mx-auto mb-4">
+    <form
+      onSubmit={handleSubmit}
+      className="p-4 border rounded w-[1200px] bg-[#f1f1db] mx-auto mb-4"
+    >
       <h2 className="text-lg font-semibold mb-2">Create a New Post</h2>
       <input
         type="text"
