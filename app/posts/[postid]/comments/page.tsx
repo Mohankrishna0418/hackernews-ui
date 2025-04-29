@@ -49,15 +49,15 @@ const CommentsPage: React.FC = () => {
     const fetchEverything = async () => {
       try {
         const [postsRes, postRes, commentsRes] = await Promise.all([
-          fetch(`http://localhost:3000/post`, {
+          fetch(`http://localhost:3000/posts`, {
             method: "GET",
             credentials: "include",
           }),
-          fetch(`http://localhost:3000/post/${postId}`, {
+          fetch(`http://localhost:3000/posts/${postId}`, {
             method: "GET",
             credentials: "include",
           }),
-          fetch(`http://localhost:3000/comment/on/${postId}`, {
+          fetch(`http://localhost:3000/comments/on/${postId}`, {
             method: "GET",
             credentials: "include",
           }),
@@ -157,7 +157,7 @@ const CommentsPage: React.FC = () => {
       : null;
 
   return (
-    <div className="container mx-auto bg-[#f1f1db] min-h-screen">
+    <div className="w-[1200px] bg-[#f1f1db] mx-auto mb-4">
       <NavigationBar />
       <div className="p-5">
         <button
