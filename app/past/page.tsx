@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { betterAuthClient } from "@/lib/integrations/better-auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
-import LikeButton from "../posts/components/LikeList"; 
+import LikeButton from "../posts/components/LikeButton"; // Adjust if your LikeButton path is different
 
 interface Post {
   id: string;
@@ -36,7 +36,7 @@ const PastPostsPage: React.FC = () => {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:3000/post?page=${page}&limit=${POSTS_PER_PAGE}`,
+          `http://localhost:3000/posts?page=${page}&limit=${POSTS_PER_PAGE}`,
           {
             method: "GET",
             credentials: "include",
@@ -47,23 +47,24 @@ const PastPostsPage: React.FC = () => {
 
         const data = await res.json();
 
-        // Get yesterday's date
+        // Get today's date
         const now = new Date();
-        const startOfYesterday = new Date(now);
-        startOfYesterday.setDate(now.getDate() - 1);
-        startOfYesterday.setHours(0, 0, 0, 0);
+        const startOfToday = new Date(now);
+        startOfToday.setHours(0, 0, 0, 0);
 
-        const endOfYesterday = new Date(now);
-        endOfYesterday.setDate(now.getDate() - 1);
-        endOfYesterday.setHours(23, 59, 59, 999);
-
-        // Filter posts to get only yesterday's posts
+        // Filter out posts that are from today
         const filteredPosts: Post[] = data.posts.filter((post: Post) => {
           const postDate = new Date(post.createdAt);
-          return postDate >= startOfYesterday && postDate <= endOfYesterday;
+          return postDate < startOfToday; // Exclude today's posts
         });
 
-        setPosts(filteredPosts);
+        // Sort the remaining posts by creation date in descending order (recent first)
+        const sortedPosts = filteredPosts.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        setPosts(sortedPosts);
       } catch (err: unknown) {
         console.error(err);
         setError(err instanceof Error ? err.message : "Error fetching posts");
@@ -82,7 +83,7 @@ const PastPostsPage: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/post/${postId}`, {
+      const res = await fetch(`http://localhost:3000/posts/${postId}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
@@ -112,7 +113,7 @@ const PastPostsPage: React.FC = () => {
     }
 
     try {
-      const endpoint = `http://localhost:3000/like/on/${postId}`;
+      const endpoint = `http://localhost:3000/likes/on/${postId}`;
       const method = liked ? "DELETE" : "POST";
 
       const res = await fetch(endpoint, {
@@ -152,7 +153,7 @@ const PastPostsPage: React.FC = () => {
       <NavigationBar />
 
       <div className="p-5">
-        <h2 className="text-lg font-bold mb-2">Yesterday&apos;s Posts</h2>
+        <h2 className="text-lg font-bold mb-2">Past Posts</h2>
 
         {error && <p className="text-red-600">{error}</p>}
 
@@ -161,7 +162,7 @@ const PastPostsPage: React.FC = () => {
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
           </div>
         ) : posts.length === 0 ? (
-          <p>No posts found for yesterday.</p>
+          <p>No posts found for previous days.</p>
         ) : (
           posts.map((post, index) => (
             <div key={post.id} className="pb-4 mb-6 border-b border-gray-600">
@@ -184,7 +185,7 @@ const PastPostsPage: React.FC = () => {
                 />
 
                 <a
-                  href={`/post/${post.id}/comments`}
+                  href={`/posts/${post.id}/comments`}
                   className="text-blue-500 hover:underline text-sm"
                 >
                   View Comments

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { betterAuthClient } from "@/lib/integrations/better-auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
-import LikeButton from "../posts/components/LikeList";
+import LikeButton from "../posts/components/LikeButton";
 
 interface Post {
   id: string;
@@ -36,7 +36,7 @@ const NewPostsPage: React.FC = () => {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:3000/post?page=${page}&limit=${POSTS_PER_PAGE}`,
+          `http://localhost:3000/posts?page=${page}&limit=${POSTS_PER_PAGE}`,
           {
             method: "GET",
             credentials: "include",
@@ -67,7 +67,7 @@ const NewPostsPage: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/post/${postId}`, {
+      const res = await fetch(`http://localhost:3000/posts/${postId}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
@@ -97,7 +97,7 @@ const NewPostsPage: React.FC = () => {
     }
 
     try {
-      const endpoint = `http://localhost:3000/like/on/${postId}`;
+      const endpoint = `http://localhost:3000/likes/on/${postId}`;
       const method = liked ? "DELETE" : "POST";
 
       const res = await fetch(endpoint, {
@@ -169,7 +169,7 @@ const NewPostsPage: React.FC = () => {
                 />
 
                 <a
-                  href={`/post/${post.id}/comments`}
+                  href={`/posts/${post.id}/comments`}
                   className="text-blue-500 hover:underline text-sm"
                 >
                   View Comments

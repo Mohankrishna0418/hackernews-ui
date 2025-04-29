@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { betterAuthClient } from "@/lib/integrations/better-auth";
-import LikeButton from "./LikeList";
+import LikeButton from "./LikeButton";
 
 interface Comment {
   id: string;
@@ -47,7 +47,7 @@ const PostList: React.FC = () => {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:3000/post?page=${page}&limit=${POSTS_PER_PAGE}`,
+          `http://localhost:3000/posts?page=${page}&limit=${POSTS_PER_PAGE}`,
           {
             method: "GET",
             credentials: "include",
@@ -83,7 +83,7 @@ const PostList: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/post/${postId}`, {
+      const res = await fetch(`http://localhost:3000/posts/${postId}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
@@ -106,46 +106,55 @@ const PostList: React.FC = () => {
     }
   };
 
-  const handleLikeChange = async (postId: string, liked: boolean) => {
-    if (!token) {
-      router.push("/login");
-      return;
-    }
+  useEffect(() => {
+    const fetchUserLikes = async () => {
+      if (token) {
+        try {
+          const res = await fetch(`http://localhost:3000/likes/me`, {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+              token,
+            },
+          });
 
-    try {
-      const endpoint = `http://localhost:3000/like/on/${postId}`;
-      const method = liked ? "DELETE" : "POST";
+          if (res.ok) {
+            const data = await res.json();
+            const userLikes = data.likes.map((like: { postId: string }) => like.postId);
 
-      const res = await fetch(endpoint, {
-        method,
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          token,
-        },
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to toggle like");
+            setPosts((prevPosts) =>
+              prevPosts.map((post) => {
+                const likedByUser = userLikes.includes(post.id);
+                return { ...post, likedByUser };
+              })
+            );
+          }
+        } catch (err: unknown) {
+          const errorMessage =
+            err instanceof Error ? err.message : "An unknown error occurred";
+          console.error(`Error fetching user likes: ${errorMessage}`);
+        }
       }
+    };
 
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                likedByUser: !liked,
-                likeCount: liked ? post.likeCount - 1 : post.likeCount + 1,
-              }
-            : post
-        )
-      );
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An unknown error occurred";
-      alert(`Error toggling like: ${errorMessage}`);
-    }
+    fetchUserLikes();
+  }, [token]);
+
+
+  const handleLikeChange = (postId: string, likedByUser: boolean) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            likedByUser,
+            likeCount: likedByUser ? post.likeCount + 1 : post.likeCount - 1,
+          };
+        }
+        return post;
+      })
+    );
   };
 
   return (
@@ -176,7 +185,7 @@ const PostList: React.FC = () => {
               <span className="text-xs text-gray-500">
                 By{" "}
                 <a
-                  //href={`/profile/${post.user.username}`}
+                  href={`/profile/${post.user.username}`}
                   className="text-blue-600 hover:underline"
                 >
                   @{post.user.username}

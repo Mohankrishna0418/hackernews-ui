@@ -35,50 +35,57 @@ const LoginPage = () => {
     <>
       <NavigationBar hideNavItems />
       {!data?.user && (
-        <div className="max-w-md mx-auto py-10">
-          <h3 className="font-bold mb-4">Login</h3>
-          <div className="space-y-3">
-            <div className="flex items-center">
-              <label className="w-24">Username:</label>
-              <input
-                type="text"
-                name="username"
-                value={loginData.username}
-                onChange={handleChange}
-                className="border border-gray-400 text-sm p-1 flex-1"
-              />
-            </div>
-            <div className="flex items-center">
-              <label className="w-24">Password:</label>
-              <input
-                type="password"
-                name="password"
-                value={loginData.password}
-                onChange={handleChange}
-                className="border border-gray-400 text-sm p-1 flex-1"
-              />
-            </div>
-            <button
-              onClick={handleLogin}
-              className="mt-2 border px-2 py-1 bg-gray-200 hover:bg-gray-300"
-            >
-              Login
-            </button>
-
-            <div className="mt-4">
-              <a
-                href="/forgot-password"
-                className="text-blue-600 underline inline-block"
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+          <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
+            <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
+            <div className="space-y-5">
+              <div>
+                <label className="block text-gray-700 text-sm mb-1">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  name="username"
+                  value={loginData.username}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+                  placeholder="Enter your username"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm mb-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={loginData.password}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+                  placeholder="Enter your password"
+                />
+              </div>
+              <button
+                onClick={handleLogin}
+                className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition duration-200"
               >
-                Forgot your password?
-              </a>
-            </div>
+                Login
+              </button>
 
-            <div className="mt-2 text-sm">
-              Don’t have an account?{" "}
-              <Link href="/sign-up" className="text-blue-600 underline">
-                Create one
-              </Link>
+              <div className="flex justify-between mt-4 text-sm">
+                <Link
+                  href="/forgot-password"
+                  className="text-blue-500 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="text-blue-500 hover:underline"
+                >
+                  Create account
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -88,4 +95,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
- 
