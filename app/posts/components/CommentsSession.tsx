@@ -45,15 +45,18 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/comment/on/${postId}`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          token,
-        },
-        body: JSON.stringify({ content: commentText }),
-      });
+      const res = await fetch(
+        `http://localhost:3000/comments/on/${postId}`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            token,
+          },
+          body: JSON.stringify({ content: commentText }),
+        }
+      );
 
       if (!res.ok) {
         const data = await res.json();
@@ -78,7 +81,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
     try {
       const res = await fetch(
-        `http://localhost:3000/comment/${editingCommentId}`,
+        `http://localhost:3000/comments/${editingCommentId}`,
         {
           method: "PATCH",
           credentials: "include",
@@ -108,13 +111,16 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
     if (!confirm("Are you sure you want to delete this comment?")) return;
 
     try {
-      const res = await fetch(`http://localhost:3000/comment/${commentId}`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: {
-          token,
-        },
-      });
+      const res = await fetch(
+        `http://localhost:3000/comments/${commentId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            token,
+          },
+        }
+      );
 
       if (!res.ok) {
         const data = await res.json();
@@ -127,7 +133,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   };
 
   return (
-    <div className="mt-4">
+    <div className="w-[1200px] bg-[#f1f1db] mx-auto mb-4">
       <h4 className="font-medium mb-1">Comments</h4>
       {comments?.length > 0 ? (
         comments.map((comment) => (

@@ -40,7 +40,7 @@ const PostList: React.FC = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  const POSTS_PER_PAGE = 10;
+  const POSTS_PER_PAGE = 5;
 
   useEffect(() => {
     const fetchPosts = async () => {
