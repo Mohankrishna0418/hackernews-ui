@@ -1,11 +1,15 @@
+// app/page.tsx
+"use client";
+
+import React from "react";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
-import PostList from "./posts/components/PostList";
+import PostList from "@/app/posts/components/PostList";
 
 export default function Home() {
   return (
-    <>
-    <NavigationBar/>
-    <PostList/>
-    </>
+    <div className="mb-10">
+      <NavigationBar />
+      <PostList />
+    </div>
   );
 }

@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-
+import { url } from "@/lib/auth";
+import { toast, Toaster } from "sonner";
 interface LikeButtonProps {
   postId: string;
   likedByUser: boolean;
@@ -29,12 +30,12 @@ const LikeButton: React.FC<LikeButtonProps> = ({
 
   const handleLike = async () => {
     if (!token) {
-      window.location.href = "/login";
+      window.location.href = "/log-in";
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/likes/on/${postId}`, {
+      const res = await fetch(`${url}/likes/on/${postId}`, {
         method: isLiked ? "DELETE" : "POST",
         credentials: "include",
         headers: {
@@ -48,27 +49,42 @@ const LikeButton: React.FC<LikeButtonProps> = ({
         throw new Error(data.error || "Failed to like/unlike post");
       }
 
-      setIsLiked(!isLiked);
-      setLikes(isLiked ? likes - 1 : likes + 1);
-      onLikeChange(postId, !isLiked);
+      const newLikeState = !isLiked;
+      setIsLiked(newLikeState);
+      setLikes(newLikeState ? likes + 1 : likes - 1);
+      onLikeChange(postId, newLikeState);
+
+      // Trigger a toast notification for like/unlike action
+      toast(newLikeState ? "Post liked!" : "Post unliked!", {
+        duration: 3000,
+        position: "bottom-right",
+        style: {
+          background: newLikeState ? "#22c55e" : "#dc2626",
+          color: "#ffffff",
+        },
+      });
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred";
       setError(`Error liking/unliking post: ${errorMessage}`);
+      toast.error(`Error: ${errorMessage}`);
     }
   };
-  
 
   return (
     <div className="flex items-center gap-2">
+      <Toaster />
       <button
         onClick={handleLike}
-        className={`text-sm ${
-          isLiked ? "text-blue-500" : "text-gray-500"
-        } hover:underline`}
+        className={`text-sm transition ${
+          isLiked
+            ? "text-red-500 hover:text-red-400"
+            : "text-gray-400 hover:text-gray-200"
+        } hover:cursor-pointer`}
       >
-        {isLiked ? "Unlike" : "Like"}
+        {isLiked ? "❤️" : "🤍"}
       </button>
+
       <span className="text-sm">{likes} likes</span>
       {error && <p className="text-red-600 text-sm">{error}</p>}
     </div>

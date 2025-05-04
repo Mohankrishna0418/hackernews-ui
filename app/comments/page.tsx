@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { betterAuthClient } from "@/lib/integrations/better-auth";
+import { auth, url } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 import PostCard from "./components/PostCard";
 
@@ -31,7 +31,7 @@ interface Post {
 
 const CommentsPage: React.FC = () => {
   const router = useRouter();
-  const { data: sessionData } = betterAuthClient.useSession();
+  const { data: sessionData } = auth.useSession();
   const token = sessionData?.session?.token || "";
 
   const [postsWithComments, setPostsWithComments] = useState<Post[]>([]);
@@ -46,7 +46,7 @@ const CommentsPage: React.FC = () => {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:3000/posts?page=${page}&limit=${POSTS_PER_PAGE}`,
+          `${url}/posts?page=${page}&limit=${POSTS_PER_PAGE}`,
           { method: "GET", credentials: "include" }
         );
 
@@ -58,20 +58,10 @@ const CommentsPage: React.FC = () => {
         const postsWithCommentsOnly: Post[] = [];
 
         for (const post of posts) {
-          const commentRes = await fetch(
-            `http://localhost:3000/comments/on/${post.id}`,
-            { method: "GET", credentials: "include" }
-          );
-
-          if (!commentRes.ok) {
-            const errorData = await commentRes.json();
-            if (errorData.error === "No comments found on this post") continue;
-            console.error(
-              `Error fetching comments for post: ${post.id}`,
-              errorData.error
-            );
-            continue;
-          }
+          const commentRes = await fetch(`${url}/comments/on/${post.id}`, {
+            method: "GET",
+            credentials: "include",
+          });
 
           const commentData = await commentRes.json();
           if (commentData.comments && commentData.comments.length > 0) {
@@ -102,12 +92,12 @@ const CommentsPage: React.FC = () => {
 
   const handleDeleteComment = async (commentId: string, postId: string) => {
     if (!token) {
-      router.push("/login");
+      router.push("/log-in");
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/comments/${commentId}`, {
+      const res = await fetch(`${url}/comments/${commentId}`, {
         method: "DELETE",
         credentials: "include",
         headers: { "Content-Type": "application/json", token },
@@ -140,24 +130,26 @@ const CommentsPage: React.FC = () => {
   };
 
   return (
-    <div className="w-[1200px] bg-[#f1f1db] mx-auto mb-4">
+    <div className="min-h-screen bg-gray-900 text-gray-100">
       <NavigationBar />
-      <div className="p-10 px-4 bg-[#f1f1db]">
+      <div className="p-5 max-w-4xl mx-auto">
         <h2
           onClick={() => router.refresh()}
-          className="text-2xl font-bold mb-6 text-center hover:underline decoration-gray-900/50 cursor-pointer"
+          className="pl-7 text-left text-xl font-bold mb-4 text-indigo-400 hover:underline cursor-pointer"
         >
           Posts with Comments
         </h2>
 
-        {error && <p className="text-red-600 mb-4">{error}</p>}
+        {error && <p className="text-red-500 mb-4">{error}</p>}
 
         {loading ? (
           <div className="flex justify-center items-center my-10">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
           </div>
         ) : postsWithComments.length === 0 ? (
-          <p>No posts with comments available.</p>
+          <p className="text-gray-400 text-center">
+            No posts with comments available.
+          </p>
         ) : (
           postsWithComments.map((post) => (
             <PostCard
@@ -174,14 +166,14 @@ const CommentsPage: React.FC = () => {
           <button
             onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
             disabled={page === 1}
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded disabled:opacity-50"
+            className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
           >
             Previous
           </button>
           <button
             onClick={() => setPage((prev) => prev + 1)}
             disabled={postsWithComments.length < POSTS_PER_PAGE}
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded disabled:opacity-50"
+            className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
           >
             Next
           </button>

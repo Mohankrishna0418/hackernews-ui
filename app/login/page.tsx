@@ -1,14 +1,14 @@
 // app/login/page.tsx
 "use client";
 
-import { betterAuthClient } from "@/lib/integrations/better-auth";
+import { auth, url } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 import Link from "next/link";
 
 const LoginPage = () => {
-  const { data } = betterAuthClient.useSession();
+  const { data } = auth.useSession();
   const router = useRouter();
 
   const [loginData, setLoginData] = useState({
@@ -24,7 +24,7 @@ const LoginPage = () => {
   };
 
   const handleLogin = async () => {
-    await betterAuthClient.signIn.username({
+    await auth.signIn.username({
       username: loginData.username,
       password: loginData.password,
     });

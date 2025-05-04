@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { betterAuthClient } from "@/lib/integrations/better-auth";
+import { auth, url } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 
 type Post = {
@@ -10,7 +10,7 @@ type Post = {
   title: string;
   content: string;
   createdAt: string;
-  user: {
+  author: {
     username: string;
     name?: string;
   };
@@ -18,7 +18,7 @@ type Post = {
 
 export default function PostPage() {
   const { postId } = useParams<{ postId: string }>();
-  const { data: sessionData } = betterAuthClient.useSession();
+  const { data: sessionData } = auth.useSession();
   const token = sessionData?.session?.token ?? "";
 
   const [post, setPost] = useState<Post | null>(null);
@@ -32,7 +32,7 @@ export default function PostPage() {
 
     async function fetchPost() {
       try {
-        const res = await fetch(`http://localhost:3000/posts/${postId}`, {
+        const res = await fetch(`${url}/posts/${postId}`, {
           method: "GET",
           credentials: "include",
         });
@@ -57,39 +57,34 @@ export default function PostPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#f1f1db]">
+      <div className="min-h-screen bg-gray-900 text-white">
         <NavigationBar />
-        <div className="container mx-auto p-8">
-          <p className="text-red-600 text-center text-lg">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!post) {
-    return (
-      <div className="min-h-screen bg-[#f1f1db]">
-        <NavigationBar />
-        <div className="container mx-auto p-8">
-          <p className="text-center text-gray-600">Loading post...</p>
+        <div className="p-8">
+          <p className="text-red-400 text-center text-lg">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto bg-[#f1f1db]">
+    <div className="bg-gray-900 text-white min-h-screen">
       <NavigationBar />
-      <div className=" max-w-3xl p-8">
-        <h1 className="text-4xl font-extrabold mb-6 text-gray-900 leading-tight">
-          {post.title}
+      <div className="p-8 max-w-4xl mx-auto">
+        <h1 className="text-4xl font-bold mb-6 text-white leading-tight">
+          {post?.title}
         </h1>
-        <p className="text-sm text-gray-500 mb-10">
-          Posted on {new Date(post.createdAt).toLocaleDateString()} by{" "}
-          {post.user.username}
+        <p className="text-sm text-gray-400 mb-10">
+          Posted by{" "}
+          <a
+            href={`/profile/${post?.author?.username}`}
+            className="text-blue-400 hover:underline"
+          >
+            @{post?.author?.username}
+          </a>{" "}
+          on {new Date(post?.createdAt || "").toLocaleDateString()}
         </p>
-        <div className="prose prose-lg max-w-none bg-white p-8 rounded-2xl shadow-lg">
-          {post.content}
+        <div className="bg-gray-800 p-6 rounded-md text-gray-200 text-justify shadow-md">
+          {post?.content}
         </div>
       </div>
     </div>

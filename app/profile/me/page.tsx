@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // We need to use `useRouter` for navigation
+import { useRouter } from "next/navigation";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
-import { betterAuthClient } from "@/lib/integrations/better-auth";
+import { auth, url } from "@/lib/auth";
 import Link from "next/link";
 
 interface Post {
@@ -36,20 +36,20 @@ interface UserProfile {
 
 const UserProfilePage: React.FC = () => {
   const router = useRouter();
-  const { data: sessionData } = betterAuthClient.useSession();
+  const { data: sessionData } = auth.useSession();
   const token = sessionData?.session?.token ?? "";
 
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>();
   const [aboutInput, setAboutInput] = useState<string>("");
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (!token) return;
       try {
-        const res = await fetch("http://localhost:3000/users/me", {
+        const res = await fetch(`${url}/users/me`, {
           method: "GET",
           credentials: "include",
           headers: {
@@ -91,8 +91,9 @@ const UserProfilePage: React.FC = () => {
     if (!profile) return;
 
     try {
-      const res = await fetch("http://localhost:3000/users/me", {
-        method: "PUT",
+      const res = await fetch(`${url}/users/me`, {
+        method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           token,
@@ -107,8 +108,7 @@ const UserProfilePage: React.FC = () => {
 
       const updatedProfile = { ...profile, about: aboutInput };
       setProfile(updatedProfile);
-
-      // Optionally, navigate to the profile overview after saving the update
+      setEditMode(false);
       router.push(`/profile/me`);
     } catch (err: unknown) {
       const errorMessage =
@@ -117,87 +117,96 @@ const UserProfilePage: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    );
-  }
-
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-600">No profile found.</p>
+      <div className="flex items-center justify-center min-h-screen bg-[#121212]">
+        <p className="text-red-500">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="w-[1200px] bg-[#f1f1db] mx-auto mb-4">
+    <div className="min-h-screen bg-gray-900 text-gray-100">
       <NavigationBar />
-      <div className="p-5 pb-10">
-        <h2 className="text-2xl font-bold mb-6 hover:underline decoration-gray-900/50 cursor-pointer">
+      <div className="p-5 pb-10 max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold mb-6 hover:underline decoration-white/50 cursor-pointer">
           My Profile
         </h2>
-
-        <div className="space-y-6 bg-white p-6 rounded shadow-md">
-          <div>
-            <strong>Name:</strong> {profile.name}
+        {loading ? (
+          <div className="flex items-center justify-center min-h-screen bg-gray-900">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
           </div>
-          <div>
-            <strong>Joined:</strong>{" "}
-            {new Date(profile.createdAt).toLocaleDateString()}
-          </div>
+        ) : (
+          <div className="space-y-6 bg-gray-900 p-6 rounded shadow-md">
+            <div>
+              <strong>Name:</strong>{" "}
+              <span className="text-gray-200">{profile?.name}</span>
+            </div>
+            <div>
+              <strong>Joined:</strong>{" "}
+              <span className="text-gray-400">
+                {new Date(profile?.createdAt || "").toLocaleDateString()}
+              </span>
+            </div>
 
-          <div>
-            <strong>About Me:</strong>
-            <div className="flex flex-col gap-2 mt-2">
-              <textarea
-                value={aboutInput}
-                onChange={(e) => setAboutInput(e.target.value)}
-                placeholder="Write something about yourself..."
-                className="p-3 border rounded resize-none h-32"
-              />
-              <button
-                onClick={handleSaveAbout}
-                className="bg-green-600 hover:bg-blue-700 text-white py-2 px-4 rounded self-start"
-                disabled={!aboutInput.trim()}
+            <div>
+              <div className="flex flex-row justify-between">
+                <strong>About Me:</strong>
+                {!editMode && (
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="text-md text-indigo-400 hover:underline"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              {editMode ? (
+                <div className="flex flex-col gap-4 mt-2">
+                  <textarea
+                    value={aboutInput}
+                    onChange={(e) => setAboutInput(e.target.value)}
+                    placeholder="Write something about yourself..."
+                    className="p-3 border border-indigo-600 bg-gray-800 text-gray-100 rounded resize-none h-32"
+                  />
+                  <button
+                    onClick={handleSaveAbout}
+                    className="bg-green-600 hover:bg-green-500 text-white py-1 px-3 rounded self-start transition"
+                    disabled={!aboutInput.trim()}
+                  >
+                    Save
+                  </button>
+                </div>
+              ) : (
+                <p className="text-gray-300 mt-2">
+                  {profile?.about || "No info provided."}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-row gap-4">
+              <Link
+                href="/profile/me/posts"
+                className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-500 transition"
               >
-                Save
-              </button>
+                View Posts
+              </Link>
+              <Link
+                href="/profile/me/comments"
+                className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-500 transition"
+              >
+                View Comments
+              </Link>
+              <Link
+                href="/profile/me/likes"
+                className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-500 transition"
+              >
+                View Likes
+              </Link>
             </div>
           </div>
-
-          <div className="flex flex-row gap-2">
-            <Link
-              href="/profile/me/posts"
-              className="bg-blue-500  text-white py-2 pr-4 pl-4 rounded hover:cursor-pointer hover:underline hover:bg-blue-600"
-            >
-              View Posts
-            </Link>
-            <Link
-              href="/profile/me/comments"
-              className="bg-blue-500  text-white py-2 pr-4 pl-4 rounded hover:cursor-pointer hover:underline hover:bg-blue-600"
-            >
-              View Comments
-            </Link>
-            <Link
-              href="/profile/me/likes"
-              className="bg-blue-500  text-white py-2 pr-4 pl-4 rounded hover:cursor-pointer hover:underline hover:bg-blue-600"
-            >
-              View Likes
-            </Link>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

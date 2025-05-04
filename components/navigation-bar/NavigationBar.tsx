@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import React from "react";
-import { betterAuthClient } from "@/lib/integrations/better-auth";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
 
 interface NavigationBarProps {
@@ -10,101 +10,101 @@ interface NavigationBarProps {
 }
 
 const navItems = [
-  { label: "new", path: "/new" },
-  { label: "past", path: "/past" },
-  { label: "comments", path: "/comments" },
-  { label: "create post", path: "/posts" },
+  { label: "New", path: "/new" },
+  { label: "Past", path: "/past" },
+  { label: "Comments", path: "/comments" },
+  { label: "Create Post", path: "/posts" },
 ];
 
 const NavigationBar: React.FC<NavigationBarProps> = ({
   hideNavItems = false,
 }) => {
   const router = useRouter();
-  const { data } = betterAuthClient.useSession();
+  const { data } = auth.useSession();
   const user = data?.user;
 
   const handleNavigation = (path: string) => {
-    router.push(path); // This is the correct way to navigate to a route in Next.js
+    if (path === "/posts" && !user) {
+      router.push("/log-in");
+      return;
+    }
+    router.push(path);
   };
 
   const handleSignOut = async () => {
-    await betterAuthClient.signOut();
+    await auth.signOut();
     router.refresh();
-    router.push("/"); // Redirect to homepage on sign out
+    router.push("/");
   };
 
   return (
-    <div className="bg-orange-600 text-black text-sm w-[1200px] mx-auto mt-2">
-        <div className="max-w-screen-xl mx-auto px-2 py-1 flex justify-between items-center">
-          {/* Left side */}
-          <div className="flex items-center gap-2">
-            <span className="bg-orange-700 text-white font-bold px-1 cursor-pointer">
-              {user?.name?.charAt(0).toUpperCase() || "Y"}
-            </span>
-            <span
-              onClick={() => {
-                handleNavigation("/");
-                router.refresh();
-              }}
-              className="font-bold cursor-pointer"
-            >
-              Hacker News
-            </span>
-            {!hideNavItems && (
-              <span className="ml-2 space-x-1">
-                {navItems.map((item, index) => (
-                  <React.Fragment key={item.label}>
-                    <button
-                      onClick={() => {
-                        handleNavigation(item.path);
-                        router.refresh();
-                      }}
-                      className="cursor-pointer hover:underline"
-                    >
-                      {item.label}
-                    </button>
-                    {index < navItems.length - 1 && <span>|</span>}
-                  </React.Fragment>
-                ))}
-              </span>
-            )}
-          </div>
+    <header className="px-50 mx-auto bg-gray-900 text-gray-100 shadow-md">
+      <div className="max-w-[95%] mx-auto py-3 flex justify-between items-center">
+        {/* Left - Logo and Navigation */}
+        <div className="flex flex-row items-center gap-6">
+          <span
+            className="text-xl pb-0.5 font-semibold text-white cursor-pointer hover:text-indigo-400 transition"
+            onClick={() => {
+              handleNavigation("/");
+              router.refresh();
+            }}
+          >
+            Hacker News
+          </span>
 
-          {/* Right side */}
-          <div className="flex items-center gap-2">
-            {!hideNavItems &&
-              (user ? (
-                <>
-                  <Link href="/profile/me" prefetch={false}>
-                    <span className="cursor-pointer hover:underline">
-                      {user?.name || "Guest"}
-                    </span>
-                  </Link>
-                  <span>|</span>
-                  <button
-                    onClick={() => {
-                      handleSignOut();
-                      router.refresh();
-                    }}
-                    className="hover:underline cursor-pointer"
-                  >
-                    logout
-                  </button>
-                </>
-              ) : (
+          {!hideNavItems && (
+            <nav className="hidden md:flex space-x-4">
+              {navItems.map((item) => (
                 <button
+                  key={item.label}
                   onClick={() => {
-                    handleNavigation("/login");
+                    handleNavigation(item.path);
                     router.refresh();
                   }}
-                  className="hover:underline cursor-pointer"
+                  className="text-sm text-gray-300 hover:text-white transition"
                 >
-                  login
+                  {item.label}
                 </button>
               ))}
-          </div>
+            </nav>
+          )}
+        </div>
+
+        {/* Right - Auth Info */}
+        <div className="flex items-center space-x-4">
+          {user ? (
+            <>
+              <Link href="/profile/me" prefetch={false}>
+                <div className="flex items-center space-x-2 hover:text-indigo-300 transition cursor-pointer">
+                  <div className="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                    {user.name?.charAt(0).toUpperCase() || "Y"}
+                  </div>
+                  <span className="text-sm">{user.name}</span>
+                </div>
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded transition"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            !hideNavItems && (
+              <button
+                onClick={() => {
+                  handleNavigation("/log-in");
+                  router.refresh();
+                }}
+                className="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded transition"
+              >
+                Login
+              </button>
+            )
+          )}
         </div>
       </div>
+    </header>
   );
 };
 

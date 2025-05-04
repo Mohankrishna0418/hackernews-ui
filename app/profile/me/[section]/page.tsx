@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { betterAuthClient } from "@/lib/integrations/better-auth";
+import { auth, url } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 
@@ -35,7 +35,7 @@ interface UserProfile {
 const UserProfileSectionPage = () => {
   const router = useRouter();
   const { section } = useParams<{ section: string }>();
-  const { data: sessionData } = betterAuthClient.useSession();
+  const { data: sessionData } = auth.useSession();
   const token = sessionData?.session?.token ?? "";
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -47,12 +47,12 @@ const UserProfileSectionPage = () => {
     const fetchData = async () => {
       try {
         const [profileRes, postsRes] = await Promise.all([
-          fetch("http://localhost:3000/users/me", {
+          fetch(`${url}/users/me`, {
             method: "GET",
             credentials: "include",
             headers: { "Content-Type": "application/json", token },
           }),
-          fetch("http://localhost:3000/posts", {
+          fetch(`${url}/posts`, {
             method: "GET",
             credentials: "include",
             headers: { "Content-Type": "application/json", token },
@@ -81,17 +81,23 @@ const UserProfileSectionPage = () => {
 
   if (loading) {
     return (
-      <div className="p-6 text-center text-gray-600">Loading user data...</div>
+      <div className="p-6 text-center text-gray-400 bg-gray-900 min-h-screen">
+        Loading user data...
+      </div>
     );
   }
 
   if (error) {
-    return <div className="p-6 text-center text-red-600">{error}</div>;
+    return (
+      <div className="p-6 text-center text-red-500 bg-gray-900 min-h-screen">
+        {error}
+      </div>
+    );
   }
 
   if (!profile) {
     return (
-      <div className="p-6 text-center text-gray-600">
+      <div className="p-6 text-center text-gray-400 bg-gray-900 min-h-screen">
         No profile data available.
       </div>
     );
@@ -100,12 +106,12 @@ const UserProfileSectionPage = () => {
   const { posts, comments, likes } = profile;
 
   return (
-    <div className="container mx-auto  mb-10">
+    <div className="min-h-screen bg-gray-900 text-gray-100">
       <NavigationBar />
-      <div className="bg-[#f1f1db] p-6">
+      <div className="p-6 max-w-4xl mx-auto">
         <button
           onClick={() => router.push("/profile/me")}
-          className="mb-6 px-4 py-2 bg-orange-400 text-white hover:bg-orange-500 rounded text-sm"
+          className="mb-6 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm transition"
         >
           ← Back to Profile
         </button>
@@ -113,10 +119,30 @@ const UserProfileSectionPage = () => {
         {section === "posts" && (
           <Section
             title="Your Posts"
-            items={posts.map((post) => (
-              <div key={post.id} className="p-4 border-b">
-                <h3 className="font-bold">{post.title}</h3>
-                <p>{post.content}</p>
+            items={posts.map((post, index) => (
+              <div
+                key={post.id}
+                onClick={() => router.push(`/post/${post.id}`)}
+                className="p-7 rounded hover:bg-gray-800 cursor-pointer"
+              >
+                <h3 className="font-semibold text-lg text-white mb-1">
+                  {index + 1}.{" "}
+                  <span className="hover:underline decoration-white cursor-pointer">
+                    {post.title}
+                  </span>
+                </h3>
+                <p className="text-sm text-gray-300">
+                  {post.content.length > 150 ? (
+                    <>
+                      {post.content.slice(0, 150)}
+                      <span className="text-blue-400 hover:cursor-pointer">
+                        &nbsp; more
+                      </span>
+                    </>
+                  ) : (
+                    post.content
+                  )}
+                </p>
               </div>
             ))}
           />
@@ -128,10 +154,13 @@ const UserProfileSectionPage = () => {
             items={comments.map((comment) => {
               const post = postMap.get(comment.postId);
               return (
-                <div key={comment.id} className="p-4 border-b">
-                  <p>
-                    Comment on <strong>{post?.title || `Unknown Post`}</strong>:{" "}
-                    {comment.content}
+                <div key={comment.id} className="p-4 border-b border-gray-700">
+                  <p className="text-gray-300">
+                    Comment on{" "}
+                    <strong className="text-gray-100">
+                      {post?.title || "Unknown Post"}
+                    </strong>
+                    : {comment.content}
                   </p>
                 </div>
               );
@@ -145,9 +174,15 @@ const UserProfileSectionPage = () => {
             items={likes.map((like) => {
               const post = postMap.get(like.postId);
               return (
-                <div key={like.id} className="p-4 border-b">
-                  <p>
-                    Liked Post: <strong>{post?.title || `Unknown Post`}</strong>
+                <div key={like.id} className="p-4 border-b border-gray-700">
+                  <p className="text-gray-300">
+                    Liked Post:{" "}
+                    <strong
+                      className="text-indigo-400 hover:underline hover:cursor-pointer hover:text-indigo-300"
+                      onClick={() => router.push(`/post/${like.postId}`)}
+                    >
+                      {post?.title || "Unknown Post"}
+                    </strong>
                   </p>
                 </div>
               );
@@ -167,13 +202,13 @@ const Section = ({
   items: React.ReactNode[];
 }) => (
   <div>
-    <h2 className="text-2xl font-bold mb-6">{title}</h2>
+    <h2 className="text-2xl font-bold mb-6 text-white">{title}</h2>
     {items.length > 0 ? (
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-gray-800 rounded-lg shadow-md overflow-hidden divide-y divide-gray-700">
         {items}
       </div>
     ) : (
-      <p className="text-gray-500">No items to display.</p>
+      <p className="text-gray-400">No items to display.</p>
     )}
   </div>
 );

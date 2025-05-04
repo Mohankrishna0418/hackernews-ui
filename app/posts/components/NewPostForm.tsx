@@ -1,84 +1,103 @@
-// app/posts/components/NewPostForm.tsx
 "use client";
 
 import React, { useState } from "react";
-import { betterAuthClient } from "@/lib/integrations/better-auth";
+import { auth, url } from "@/lib/auth";
+import { toast, Toaster } from "sonner";
+import { useRouter } from "next/navigation";
 
 const NewPostForm: React.FC = () => {
-  const { data: sessionData } = betterAuthClient.useSession();
+  const router = useRouter();
+  const { data: sessionData } = auth.useSession();
   const token = sessionData?.session?.token;
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [message, setMessage] = useState("");
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!token) {
-      setMessage("Error: You must be logged in to create a post.");
+      toast.error("You must be logged in to create a post.");
       return;
     }
 
-    try {
-      const res = await fetch(
-        "http://localhost:3000/posts",
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            token,
-          },
-          body: JSON.stringify({ title, content }),
+    await toast.promise(
+      fetch(`${url}/posts`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          token,
+        },
+        body: JSON.stringify({ title, content }),
+      }).then(async (res) => {
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Unknown error");
         }
-      );
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Unknown error");
+      }),
+      {
+        loading: "Creating post...",
+        success: () => {
+          setTitle("");
+          setContent("");
+          router.push("/");
+          return {
+            message: "Post created successfully!",
+            duration: 5000,
+          };
+        },
+        error: (err: unknown) => ({
+          message:
+            err instanceof Error
+              ? `Error: ${err.message}`
+              : "An unknown error occurred",
+          duration: 5000,
+        }),
       }
-
-      setMessage("Post created successfully!");
-      setTitle("");
-      setContent("");
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An unknown error occurred";
-      setMessage(`Error: ${errorMessage}`);
-    }
+    );
   };
 
   return (
-    <div className="w-[1200px] bg-[#f1f1db] mx-auto mb-4">
-      <div className="p-5">
-        <form onSubmit={handleSubmit} className="p-4 border rounded mb-4">
-          <h2 className="text-lg font-semibold mb-2">Create a New Post</h2>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title"
-            className="block w-full p-2 mb-2 border border-black"
-            required
-          />
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Content"
-            className="block w-full p-2 mb-2 border border-black"
-            required
-          />
-          <button
-            type="submit"
-            className="bg-orange-600 text-white px-4 py-2 rounded"
-          >
-            Post
-          </button>
-          {message && <p className="mt-2">{message}</p>}
-        </form>
+    <>
+      <Toaster richColors position="top-right" />
+      <div className="min-h-screen flex bg-gray-900 text-gray-100 px-4 justify-center">
+        <div className="min-w-8/12 h-full bg-gray-900 text-white rounded-2xl shadow-lg p-10">
+          <h2 className="text-2xl font-bold mb-4">Create a New Post</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Title</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter a title"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Content</label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Write something..."
+                rows={10}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white px-6 py-2 rounded-sm font-medium"
+            >
+              Post
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

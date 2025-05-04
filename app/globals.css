@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-
 @source "../node_modules/@daveyplate/better-auth-ui";
 
 @custom-variant dark (&:is(.dark *));
@@ -117,7 +116,6 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gray-900 text-gray-100;
   }
 }
-

@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { betterAuthClient } from "@/lib/integrations/better-auth";
+import { auth, url } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 import LikeButton from "../posts/components/LikeButton";
+import { toast, Toaster } from "sonner";
 
 interface Post {
   id: string;
@@ -17,57 +18,91 @@ interface Post {
   };
   likedByUser: boolean;
   likeCount: number;
+  number?: number;
 }
 
-const POSTS_PER_PAGE = 10;
+const POSTS_PER_PAGE = 5;
 
 const NewPostsPage: React.FC = () => {
   const router = useRouter();
-  const { data: sessionData } = betterAuthClient.useSession();
+  const { data: sessionData } = auth.useSession();
   const token = sessionData?.session?.token || "";
 
   const [posts, setPosts] = useState<Post[]>([]);
-  const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
 
   useEffect(() => {
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        const res = await fetch(
-          `http://localhost:3000/posts?page=${page}&limit=${POSTS_PER_PAGE}`,
-          {
+        const [postsRes, likesRes] = await Promise.all([
+          fetch(`${url}/posts?page=${page}&limit=${POSTS_PER_PAGE}`, {
             method: "GET",
             credentials: "include",
-          }
-        );
+          }),
+          token
+            ? fetch(`${url}/likes/me`, {
+                method: "GET",
+                credentials: "include",
+                headers: {
+                  "Content-Type": "application/json",
+                  token,
+                },
+              })
+            : Promise.resolve(null),
+        ]);
 
-        if (!res.ok) throw new Error("Failed to fetch posts");
+        if (!postsRes.ok) throw new Error("Failed to fetch posts");
 
-        const data = await res.json();
-        const fetchedPosts: Post[] = data.posts ?? [];
+        const postData = await postsRes.json();
+        const fetchedPosts: Post[] = postData.posts ?? [];
 
-        setPosts(fetchedPosts);
+        // Filter posts to include only those created today.
+        const today = new Date().setHours(0, 0, 0, 0);
+        const filteredPosts = fetchedPosts.filter((post) => {
+          const postDate = new Date(post.createdAt).setHours(0, 0, 0, 0);
+          return postDate === today;
+        });
+
+        const userLikes: string[] =
+          likesRes && likesRes.ok
+            ? (await likesRes.json()).likes.map(
+                (like: { postId: string }) => like.postId
+              )
+            : [];
+
+        const postsWithMeta = filteredPosts.map((post, index) => ({
+          ...post,
+          likedByUser: userLikes.includes(post.id),
+          number: (page - 1) * POSTS_PER_PAGE + (index + 1),
+        }));
+
+        setPosts(postsWithMeta);
+        // If we fetched a full page of posts, assume there might be more for pagination.
+        setHasNextPage(fetchedPosts.length === POSTS_PER_PAGE);
       } catch (err: unknown) {
-        console.error(err);
-        setError(err instanceof Error ? err.message : "Error fetching posts");
+        const errorMessage =
+          err instanceof Error ? err.message : "An unknown error occurred";
+        toast.error(`Failed to load posts: ${errorMessage}`);
+        setHasNextPage(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchPosts();
-  }, [page]);
+  }, [page, token]);
 
   const handleDeletePost = async (postId: string) => {
     if (!token) {
-      router.push("/login");
+      router.push("/log-in");
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/posts/${postId}`, {
+      const res = await fetch(`${url}/posts/${postId}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
@@ -81,104 +116,119 @@ const NewPostsPage: React.FC = () => {
         throw new Error(data.error || "Failed to delete post");
       }
 
-      // Optimistically remove the post from UI
       setPosts((prev) => prev.filter((post) => post.id !== postId));
+      toast.success("Post deleted successfully.");
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred";
-      alert(`Error deleting post: ${errorMessage}`);
+      toast.error(`Error deleting post: ${errorMessage}`);
     }
   };
 
-  const handleLikeChange = async (postId: string, liked: boolean) => {
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    try {
-      const endpoint = `http://localhost:3000/likes/on/${postId}`;
-      const method = liked ? "DELETE" : "POST";
-
-      const res = await fetch(endpoint, {
-        method,
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          token,
-        },
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to toggle like");
-      }
-
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                likedByUser: !liked,
-                likeCount: liked ? post.likeCount - 1 : post.likeCount + 1,
-              }
-            : post
-        )
-      );
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An unknown error occurred";
-      alert(`Error toggling like: ${errorMessage}`);
-    }
+  const handleLikeChange = (postId: string, likedByUser: boolean) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            likedByUser,
+            likeCount: likedByUser ? post.likeCount + 1 : post.likeCount - 1,
+          };
+        }
+        return post;
+      })
+    );
   };
 
   return (
-    <div className="w-[1200px] bg-[#f1f1db] mx-auto mb-4">
+    <div className="min-h-screen bg-gray-900 text-gray-100">
+      <Toaster richColors position="top-right" />
       <NavigationBar />
-
-      <div className="p-5">
-        <h2 className="text-lg font-bold mb-2">Today&apos;s Posts</h2>
-
-        {error && <p className="text-red-600">{error}</p>}
+      <div className="p-5 max-w-4xl mx-auto">
+        <h2
+          onClick={() => router.refresh()}
+          className="pl-7 text-left text-xl font-bold mb-4 text-indigo-400 hover:underline cursor-pointer"
+        >
+          Today&apos;s Posts
+        </h2>
 
         {loading ? (
           <div className="flex justify-center items-center my-10">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
           </div>
         ) : posts.length === 0 ? (
-          <p>No posts available.</p>
+          <p>No posts available for today.</p>
         ) : (
-          posts.map((post, index) => (
-            <div key={post.id} className="pb-4 mb-6 border-b border-gray-600">
-              <h3 className="font-semibold text-md">
-                {(page - 1) * POSTS_PER_PAGE + (index + 1)}. {post.title}
-              </h3>
-              <p>{post.content}</p>
-              <span className="text-xs text-gray-500">
-                By {post.user.username} on{" "}
-                {new Date(post.createdAt).toLocaleString()}
-              </span>
+          posts.map((post) => (
+            <div
+              key={post.id}
+              className="pb-4 border-b border-gray-700 px-4 hover:bg-gray-800 transition rounded"
+            >
+              {/* Post Title & Content */}
+              <div
+                onClick={() => router.push(`/post/${post.id}`)}
+                className="p-3 rounded"
+              >
+                <h3 className="font-semibold text-lg text-white mb-1">
+                  {post.number}.{" "}
+                  <span className="hover:underline decoration-white cursor-pointer">
+                    {post.title}
+                  </span>
+                </h3>
+                <p className="text-sm text-gray-300">
+                  {post.content.length > 150 ? (
+                    <>
+                      {post.content.slice(0, 150)}
+                      <span className="text-blue-600 hover:cursor-pointer">
+                        &nbsp; more
+                      </span>
+                    </>
+                  ) : (
+                    post.content
+                  )}
+                </p>
+              </div>
 
-              <div className="mt-2 flex flex-row items-center gap-5">
-                <LikeButton
-                  postId={post.id}
-                  likedByUser={post.likedByUser}
-                  likeCount={post.likeCount}
-                  token={token}
-                  onLikeChange={handleLikeChange}
-                />
+              {/* Metadata */}
+              <div className="text-xs text-gray-400 px-3">
+                By{" "}
+                <a
+                  href={`/profile/${post.user.username}`}
+                  className="text-indigo-400 hover:text-indigo-300 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  @{post.user.username}
+                </a>{" "}
+                on {new Date(post.createdAt).toLocaleString()}
+              </div>
+
+              {/* Actions */}
+              <div className="mt-3 flex items-center gap-6 text-sm">
+                <div onClick={(e) => e.stopPropagation()}>
+                  <LikeButton
+                    postId={post.id}
+                    likedByUser={post.likedByUser}
+                    likeCount={post.likeCount}
+                    token={token}
+                    onLikeChange={handleLikeChange}
+                  />
+                </div>
 
                 <a
                   href={`/posts/${post.id}/comments`}
-                  className="text-blue-500 hover:underline text-sm"
+                  className="text-blue-500 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  View Comments
+                  Comments
                 </a>
 
                 {sessionData?.user?.username === post.user.username && (
                   <button
-                    onClick={() => handleDeletePost(post.id)}
-                    className="text-red-500 hover:underline text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeletePost(post.id);
+                    }}
+                    className="bg-red-600 hover:bg-red-500 text-white font-medium py-1 px-3 rounded transition"
                   >
                     Delete Post
                   </button>
@@ -188,19 +238,25 @@ const NewPostsPage: React.FC = () => {
           ))
         )}
 
-        {/* Pagination */}
+        {/* Pagination Buttons */}
         <div className="flex justify-center gap-4 my-6">
           <button
             onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
             disabled={page === 1}
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded disabled:opacity-50"
+            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
           <button
-            onClick={() => setPage((prev) => prev + 1)}
-            disabled={posts.length < POSTS_PER_PAGE}
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded disabled:opacity-50"
+            onClick={() => {
+              if (!hasNextPage) {
+                toast.warning("You are already on the last page.");
+                return;
+              }
+              setPage((prev) => prev + 1);
+            }}
+            disabled={!hasNextPage}
+            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>

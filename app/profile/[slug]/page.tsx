@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
+import { url } from "@/lib/auth";
 
 interface Comment {
   id: string;
@@ -49,23 +50,19 @@ const UserProfilePage: React.FC = () => {
 
       try {
         const [postsRes, commentsRes, likesRes] = await Promise.all([
-          fetch(`http://localhost:3000/posts/by/${slug}`, {
+          fetch(`${url}/posts/by/${slug}`, {
             method: "GET",
             credentials: "include",
           }),
-          fetch(`http://localhost:3000/comments/by/${slug}`, {
+          fetch(`${url}/comments/by/${slug}`, {
             method: "GET",
             credentials: "include",
           }),
-          fetch(`http://localhost:3000/likes/by/${slug}`, {
+          fetch(`${url}/likes/by/${slug}`, {
             method: "GET",
             credentials: "include",
-          }),          
+          }),
         ]);
-
-        if (!postsRes.ok || !commentsRes.ok || !likesRes.ok) {
-          throw new Error("Failed to fetch profile data");
-        }
 
         const postsData = await postsRes.json();
         const commentsData = await commentsRes.json();
@@ -87,21 +84,21 @@ const UserProfilePage: React.FC = () => {
   }, [slug]);
 
   return (
-    <div className="w-[1200px] bg-[#f1f1db] mx-auto mb-4">
+    <div className="mb-10 min-h-screen bg-gray-900 text-white">
       <NavigationBar />
-      <div className="p-6 bg-[#f1f1db]">
+      <div className="p-6 max-w-4xl mx-auto">
         <h2
           onClick={() => router.refresh()}
-          className="text-lg font-bold mb-8 cursor-pointer hover:underline decoration-gray-800/70"
+          className="text-lg font-bold mb-8 cursor-pointer hover:underline decoration-gray-400"
         >
           Profile: {slug}
         </h2>
 
-        {error && <p className="text-red-600 mb-4">{error}</p>}
+        {error && <p className="text-red-400 mb-4">{error}</p>}
 
         {loading ? (
           <div className="flex justify-center items-center h-60">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-gray-900"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-white"></div>
           </div>
         ) : (
           <>
@@ -109,22 +106,33 @@ const UserProfilePage: React.FC = () => {
             <section className="mb-12">
               <h3 className="text-md font-semibold mb-6">Posts</h3>
               {userPosts.length === 0 ? (
-                <p className="text-gray-600">No posts yet.</p>
+                <p className="text-gray-400">No posts yet.</p>
               ) : (
                 <div className="grid gap-6">
                   {userPosts.map((post) => (
-                    <div
+                    <Link
+                      href={`/post/${post.id}`}
                       key={post.id}
-                      className="bg-white p-6 rounded-xl shadow hover:shadow-md transition"
+                      className="bg-gray-800 p-6 rounded-xl shadow hover:shadow-lg transition block"
                     >
-                      <h4 className="text-md font-bold mb-2">{post.title}</h4>
-                      <p className="text-sm text-gray-700 mb-4">
-                        {post.content}
+                      <h4 className="text-md font-bold mb-2 text-indigo-400 hover:underline">
+                        {post.title}
+                      </h4>
+                      <p className="text-sm text-gray-300 mb-4">
+                        {post.content.length > 150 ? (
+                          <>
+                            {post.content.slice(0, 150)}
+                            <span className="text-blue-400"> &nbsp; more </span>
+                          </>
+                        ) : (
+                          post.content
+                        )}
                       </p>
-                      <div className="text-sm text-gray-500 flex justify-between">
-                        <span>{new Date(post.createdAt).toLocaleString()}</span>
+
+                      <div className="text-sm text-gray-500">
+                        {new Date(post.createdAt).toLocaleString()}
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -134,20 +142,20 @@ const UserProfilePage: React.FC = () => {
             <section className="mb-12">
               <h3 className="text-md font-semibold mb-6">Comments</h3>
               {userComments.length === 0 ? (
-                <p className="text-gray-600">No comments yet.</p>
+                <p className="text-gray-400">No comments yet.</p>
               ) : (
                 <div className="grid gap-6">
                   {userComments.map((comment) => (
                     <div
                       key={comment.id}
-                      className="bg-white p-5 rounded-xl shadow hover:shadow-md transition"
+                      className="bg-gray-800 p-5 rounded-xl shadow hover:shadow-lg transition"
                     >
-                      <p className="text-gray-800 mb-3">{comment.content}</p>
+                      <p className="text-gray-200 mb-3">{comment.content}</p>
                       <div className="text-xs text-gray-500">
                         On{" "}
                         <Link
-                          href={`/posts/${comment.post.id}`}
-                          className="text-blue-600 hover:underline"
+                          href={`/post/${comment.post.id}`}
+                          className="text-indigo-400 hover:underline"
                         >
                           {comment.post.title}
                         </Link>{" "}
@@ -163,17 +171,17 @@ const UserProfilePage: React.FC = () => {
             <section className="mb-12">
               <h3 className="text-md font-semibold mb-6">Liked Posts</h3>
               {userLikes.length === 0 ? (
-                <p className="text-gray-600">No likes yet.</p>
+                <p className="text-gray-400">No likes yet.</p>
               ) : (
                 <div className="grid gap-4">
                   {userLikes.map((like) => (
                     <div
                       key={like.id}
-                      className="bg-white p-4 rounded-xl shadow hover:shadow-md transition"
+                      className="bg-gray-800 p-4 rounded-xl shadow hover:shadow-lg transition"
                     >
                       <Link
-                        href={`/posts/${like.post.id}`}
-                        className="text-blue-600 font-semibold hover:underline text-md"
+                        href={`/post/${like.post.id}`}
+                        className="text-indigo-400 font-semibold hover:underline text-md"
                       >
                         {like.post.title}
                       </Link>

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { betterAuthClient } from "@/lib/integrations/better-auth";
+import { auth, url } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 
 interface Comment {
@@ -20,7 +20,7 @@ interface Post {
   title: string;
   content: string;
   createdAt: string;
-  user: {
+  author: {
     username: string;
     name?: string;
   };
@@ -34,7 +34,7 @@ const CommentsPage: React.FC = () => {
   const params = useParams();
   const postId = params?.postid as string;
 
-  const { data: sessionData } = betterAuthClient.useSession();
+  const { data: sessionData } = auth.useSession();
   const token = sessionData?.session?.token || "";
 
   const [post, setPost] = useState<Post | null>(null);
@@ -49,15 +49,15 @@ const CommentsPage: React.FC = () => {
     const fetchEverything = async () => {
       try {
         const [postsRes, postRes, commentsRes] = await Promise.all([
-          fetch(`http://localhost:3000/posts`, {
+          fetch(`${url}/posts`, {
             method: "GET",
             credentials: "include",
           }),
-          fetch(`http://localhost:3000/posts/${postId}`, {
+          fetch(`${url}/posts/${postId}`, {
             method: "GET",
             credentials: "include",
           }),
-          fetch(`http://localhost:3000/comments/on/${postId}`, {
+          fetch(`${url}/comments/on/${postId}`, {
             method: "GET",
             credentials: "include",
           }),
@@ -81,12 +81,12 @@ const CommentsPage: React.FC = () => {
 
   const handleDeleteComment = async (commentId: string) => {
     if (!token) {
-      router.push("/login");
+      router.push("/log-in");
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/comments/${commentId}`, {
+      const res = await fetch(`${url}/comments/${commentId}`, {
         method: "DELETE",
         credentials: "include",
         headers: {
@@ -114,12 +114,12 @@ const CommentsPage: React.FC = () => {
     if (!newComment.trim()) return alert("Please write a comment first!");
 
     if (!token) {
-      router.push("/login");
+      router.push("/log-in");
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/comments/on/${postId}`, {
+      const res = await fetch(`${url}/comments/on/${postId}`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -135,13 +135,10 @@ const CommentsPage: React.FC = () => {
       }
 
       setNewComment("");
-      const updatedCommentsRes = await fetch(
-        `http://localhost:3000/comments/on/${postId}`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const updatedCommentsRes = await fetch(`${url}/comments/on/${postId}`, {
+        method: "GET",
+        credentials: "include",
+      });
       const updatedCommentsData = await updatedCommentsRes.json();
       setComments(updatedCommentsData?.comments ?? []);
     } catch (err) {
@@ -157,12 +154,12 @@ const CommentsPage: React.FC = () => {
       : null;
 
   return (
-    <div className="w-[1200px] bg-[#f1f1db] mx-auto mb-4">
+    <div className="bg-gray-900 min-h-screen text-gray-100">
       <NavigationBar />
-      <div className="p-5">
+      <div className="p-5 max-w-4xl mx-auto">
         <button
           onClick={() => router.back()}
-          className="text-blue-500 hover:underline mb-4"
+          className="pl-3 text-indigo-400 hover:underline mb-4"
         >
           Back to Posts
         </button>
@@ -170,53 +167,79 @@ const CommentsPage: React.FC = () => {
         {error && <p className="text-red-600">{error}</p>}
 
         {post ? (
-          <div>
-            <h1 className="text-xl font-semibold mb-2">
-              {postNumber ?? "Loading..."}. {post.title}
-            </h1>
-            <p>{post.content}</p>
+          <div className="p-7 rounded-lg bg-gray-800 shadow-md">
+            <div
+              className="flex flex-row justify-between"
+              onClick={() => router.push(`/post/${post.id}`)}
+            >
+              <h1 className="text-2xl font-semibold mb-3">
+                {postNumber ?? "Loading..."}.
+                <span className="hover:underline decoration-gray-300 cursor-pointer">
+                  {post.title}
+                </span>
+              </h1>
+            </div>
+            <p className="text-sm text-gray-300">
+              {post.content.length > 150 ? (
+                <>
+                  {post.content.slice(0, 150)}
+                  <span
+                    className="text-blue-400 hover:cursor-pointer"
+                    onClick={() => router.push(`/post/${post.id}`)}
+                  >
+                    &nbsp; more
+                  </span>
+                </>
+              ) : (
+                post.content
+              )}
+            </p>
             <span className="text-sm text-gray-500">
-              By {post.user.username} on{" "}
+              By {post.author?.username} on{" "}
               {new Date(post.createdAt).toLocaleString()}
             </span>
-            <div className="mt-4">
-              <h3 className="font-semibold mb-2 text-md">Comments</h3>
+
+            <div className="mt-6">
+              <h3 className="font-semibold mb-3 text-xl">Comments</h3>
               {Array.isArray(comments) && comments.length > 0 ? (
                 <div>
                   {comments.map((comment) => (
-                    <div key={comment.id} className="border-b py-2">
+                    <div key={comment.id} className="border-b py-3">
                       <p className="text-md">
                         <strong>{comment.user.username}</strong>:{" "}
                         {comment.content}
                       </p>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-400">
                         {new Date(comment.createdAt).toLocaleString()}
                       </span>
                       {sessionData?.user?.username ===
                         comment.user.username && (
                         <button
                           onClick={() => handleDeleteComment(comment.id)}
-                          className="ml-2 text-red-500 hover:underline text-xs"
+                          className="ml-2 text-red-400 hover:underline text-xs"
                         >
-                          Delete Comment
+                          Delete
                         </button>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p>No comments yet. Be the first to comment!</p>
+                <p className="text-gray-400">
+                  No comments yet. Be the first to comment!
+                </p>
               )}
-              <form onSubmit={handleCommentSubmit} className="mt-4">
+
+              <form onSubmit={handleCommentSubmit} className="mt-6">
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="Add your comment here"
                 ></textarea>
                 <button
                   type="submit"
-                  className="mt-2 bg-blue-500 text-white p-2 rounded-md"
+                  className="mt-3 bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   Submit Comment
                 </button>
@@ -224,7 +247,7 @@ const CommentsPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <p>Loading post...</p>
+          <p className="text-gray-400">Loading post...</p>
         )}
       </div>
     </div>
