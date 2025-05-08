@@ -40,7 +40,7 @@ const PostCard: React.FC<PostCardProps> = ({
   return (
     <div
       key={post.id}
-      className="pb-10 border-b border-white px-4 hover:bg-gray-800 transition rounded"
+      className="pb-10 border-b border-white px-4 hover:bg-gray-800 transition"
     >
       {/* Post Title & Content */}
       <div
@@ -69,11 +69,11 @@ const PostCard: React.FC<PostCardProps> = ({
       <div className="text-xs text-gray-400 px-3">
         By{" "}
         <a
-          href={`/profile/${post.user.username}`}
+          href={`/users/${post.user.name}`}
           className="text-indigo-400 hover:text-indigo-300 hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
-          @{post.user.username}
+          @{post.user.name}
         </a>{" "}
         on {new Date(post.createdAt).toLocaleString()}
       </div>
@@ -91,15 +91,15 @@ const PostCard: React.FC<PostCardProps> = ({
               <span>
                 By{" "}
                 <a
-                  href={`/profile/${comment.user.username}`}
+                  href={`/users/${comment.user.name}`}
                   className="text-indigo-400 hover:text-indigo-300 hover:underline"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  @{comment.user.username}
+                  @{comment.user.name}
                 </a>{" "}
                 on {new Date(comment.createdAt).toLocaleString()}
               </span>
-              {currentUsername === comment.user.username && (
+              {currentUsername === comment.user.name && (
                 <button
                   onClick={() => onDeleteComment(comment.id, post.id)}
                   className="text-red-400 hover:underline"

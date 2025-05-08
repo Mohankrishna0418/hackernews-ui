@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, url } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 import PostCard from "./components/PostCard";
+import { serverUrl } from "@/lib/evironment";
 
 interface Comment {
   id: string;
@@ -46,7 +47,7 @@ const CommentsPage: React.FC = () => {
       setLoading(true);
       try {
         const res = await fetch(
-          `${url}/posts?page=${page}&limit=${POSTS_PER_PAGE}`,
+          `${serverUrl}/posts?page=${page}&limit=${POSTS_PER_PAGE}`,
           { method: "GET", credentials: "include" }
         );
 
@@ -57,20 +58,25 @@ const CommentsPage: React.FC = () => {
 
         const postsWithCommentsOnly: Post[] = [];
 
-        for (const post of posts) {
-          const commentRes = await fetch(`${url}/comments/on/${post.id}`, {
-            method: "GET",
-            credentials: "include",
-          });
+        const updatedPosts = await Promise.all(
+          posts.map(async (post) => {
+            const commentRes = await fetch(
+              `${serverUrl}/comments/on/${post.id}`,
+              {
+                method: "GET",
+                credentials: "include",
+              }
+            );
 
-          const commentData = await commentRes.json();
-          if (commentData.comments && commentData.comments.length > 0) {
-            postsWithCommentsOnly.push({
-              ...post,
-              comments: commentData.comments,
-            });
-          }
-        }
+            const commentData = await commentRes.json();
+            if (commentData.comments && commentData.comments.length > 0) {
+              return {
+                ...post,
+                comments: commentData.comments,
+              };
+            }
+          })
+        );
 
         const postsWithNumber = postsWithCommentsOnly.map((post, index) => ({
           ...post,
@@ -78,6 +84,21 @@ const CommentsPage: React.FC = () => {
         }));
 
         setPostsWithComments(postsWithNumber);
+
+        updatedPosts.forEach((post) => {
+          if (post && post.comments.length > 0) {
+            postsWithCommentsOnly.push(post);
+          }
+        });
+
+        const postsWithNumberFixed = postsWithCommentsOnly.map(
+          (post, index) => ({
+            ...post,
+            number: (page - 1) * POSTS_PER_PAGE + (index + 1),
+          })
+        );
+
+        setPostsWithComments(postsWithNumberFixed);
       } catch (err: unknown) {
         const errorMessage =
           err instanceof Error ? err.message : "An unknown error occurred";
@@ -97,10 +118,9 @@ const CommentsPage: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`${url}/comments/${commentId}`, {
+      const res = await fetch(`${serverUrl}/comments/${commentId}`, {
         method: "DELETE",
         credentials: "include",
-        headers: { "Content-Type": "application/json", token },
       });
 
       if (!res.ok) {
@@ -144,7 +164,7 @@ const CommentsPage: React.FC = () => {
 
         {loading ? (
           <div className="flex justify-center items-center my-10">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
           </div>
         ) : postsWithComments.length === 0 ? (
           <p className="text-gray-400 text-center">
@@ -155,7 +175,7 @@ const CommentsPage: React.FC = () => {
             <PostCard
               key={post.id}
               post={post}
-              currentUsername={sessionData?.user?.username || undefined}
+              currentUsername={sessionData?.user?.name || undefined}
               onDeleteComment={handleDeleteComment}
             />
           ))
