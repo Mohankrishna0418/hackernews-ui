@@ -1,4 +1,3 @@
-// app/layout.tsx
 if (typeof window !== "undefined") {
   const originalFetch = window.fetch;
   window.fetch = (input, init = {}) =>
@@ -7,11 +6,22 @@ if (typeof window !== "undefined") {
 
 import React, { PropsWithChildren } from "react";
 import "./globals.css";
+import { ThemeProvider } from "@/lib/integrations/theme-provider";
+import TanstackQueryClientProvider from "@/components/providers/tanstack-query-client-provider";
 
-const RootLayout = (props: PropsWithChildren) => {
+const RootLayout = ({children}: PropsWithChildren) => {
   return (
-    <html>
-      <body>{props.children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TanstackQueryClientProvider>{children}</TanstackQueryClientProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 };

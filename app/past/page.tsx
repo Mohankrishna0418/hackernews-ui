@@ -1,275 +1,32 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { auth, url } from "@/lib/auth";
+import React from "react";
+import PostList from "../posts/components/PostList";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
-import LikeButton from "../posts/components/LikeButton";
-import { toast, Toaster } from "sonner";
-
 interface Post {
   id: string;
   title: string;
   content: string;
   createdAt: string;
-  user: {
-    username: string;
-    name?: string;
-  };
-  likedByUser: boolean;
-  likeCount: number;
-  number?: number;
 }
 
 const POSTS_PER_PAGE = 10;
 
 const PastPostsPage: React.FC = () => {
-  const router = useRouter();
-  const { data: sessionData } = auth.useSession();
-  const token = sessionData?.session?.token || "";
-
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [hasNextPage, setHasNextPage] = useState(true);
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `${url}/posts?page=${page}&limit=${POSTS_PER_PAGE}`,
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
-
-        if (!res.ok) throw new Error("Failed to fetch posts");
-
-        const data = await res.json();
-
-        // Filter out today's posts – keep only posts created before today.
-        const now = new Date();
-        const startOfToday = new Date(now.setHours(0, 0, 0, 0));
-
-        const filteredPosts: Post[] = data.posts.filter((post: Post) => {
-          const postDate = new Date(post.createdAt);
-          return postDate < startOfToday;
-        });
-
-
-        const sortedPosts = filteredPosts.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-
-        const likesRes = token
-          ? await fetch(`${url}/likes/me`, {
-              method: "GET",
-              credentials: "include",
-              headers: {
-                "Content-Type": "application/json",
-                token,
-              },
-            })
-          : null;
-
-        const userLikes: string[] =
-          likesRes && likesRes.ok
-            ? (await likesRes.json()).likes.map(
-                (like: { postId: string }) => like.postId
-              )
-            : [];
-
-        const postsWithMeta = sortedPosts.map((post, index) => ({
-          ...post,
-          likedByUser: userLikes.includes(post.id),
-          number: (page - 1) * POSTS_PER_PAGE + (index + 1),
-        }));
-
-        setPosts(postsWithMeta);
-        setHasNextPage(data.posts.length === POSTS_PER_PAGE);
-      } catch (err: unknown) {
-        const errorMessage =
-          err instanceof Error ? "It is the Last Page" : "An unknown error occurred";
-        toast.error(`Failed to load posts: ${errorMessage}`);
-        setHasNextPage(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPosts();
-  }, [page, token]);
-
-  const handleDeletePost = async (postId: string) => {
-    if (!token) {
-      router.push("/log-in");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${url}/posts/${postId}`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          token,
-        },
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to delete post");
-      }
-
-      setPosts((prev) => prev.filter((post) => post.id !== postId));
-      toast.success("Post deleted successfully");
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "An unknown error occurred";
-      toast.error(`Error deleting post: ${errorMessage}`);
-    }
-  };
-
-  const handleLikeChange = (postId: string, likedByUser: boolean) => {
-    setPosts((prevPosts) =>
-      prevPosts.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            likedByUser,
-            likeCount: likedByUser ? post.likeCount + 1 : post.likeCount - 1,
-          };
-        }
-        return post;
-      })
-    );
+  const filterPastPosts = (post: Post) => {
+    const today = new Date().setHours(0, 0, 0, 0);
+    const postDate = new Date(post.createdAt).setHours(0, 0, 0, 0);
+    return postDate < today; 
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
-      <Toaster richColors position="top-right" />
+    <div>
       <NavigationBar />
-      <div className="p-5 max-w-4xl mx-auto">
-        <h2
-          onClick={() => router.refresh()}
-          className="pl-7 text-left text-xl font-bold mb-4 text-indigo-400 hover:underline cursor-pointer"
-        >
-          Past Posts
-        </h2>
-
-        {loading ? (
-          <div className="flex justify-center items-center my-10">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
-          </div>
-        ) : posts.length === 0 ? (
-          <p className="text-center">No posts found for previous days.</p>
-        ) : (
-          posts.map((post) => (
-            <div
-              key={post.id}
-              className="pb-4 border-b border-gray-700 px-4 hover:bg-gray-800 transition rounded"
-            >
-              {/* Post Title & Content */}
-              <div
-                onClick={() => router.push(`/post/${post.id}`)}
-                className="p-3 rounded"
-              >
-                <h3 className="font-semibold text-lg text-white mb-1">
-                  {post.number}.{" "}
-                  <span className="hover:underline decoration-white cursor-pointer">
-                    {post.title}
-                  </span>
-                </h3>
-                <p className="text-sm text-gray-300">
-                  {post.content.length > 150 ? (
-                    <>
-                      {post.content.slice(0, 150)}
-                      <span className="text-blue-600 hover:cursor-pointer">
-                        &nbsp; more
-                      </span>
-                    </>
-                  ) : (
-                    post.content
-                  )}
-                </p>
-              </div>
-
-              {/* Metadata */}
-              <div className="text-xs text-gray-400 px-3">
-                By{" "}
-                <a
-                  href={`/profile/${post.user.username}`}
-                  className="text-indigo-400 hover:text-indigo-300 hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  @{post.user.username}
-                </a>{" "}
-                on {new Date(post.createdAt).toLocaleString()}
-              </div>
-
-              {/* Actions */}
-              <div className="mt-3 flex items-center gap-6 text-sm px-3">
-                <div onClick={(e) => e.stopPropagation()}>
-                  <LikeButton
-                    postId={post.id}
-                    likedByUser={post.likedByUser}
-                    likeCount={post.likeCount}
-                    token={token}
-                    onLikeChange={handleLikeChange}
-                  />
-                </div>
-
-                <a
-                  href={`/posts/${post.id}/comments`}
-                  className="text-blue-500 hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Comments
-                </a>
-
-                {sessionData?.user?.username === post.user.username && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeletePost(post.id);
-                    }}
-                    className="bg-red-600 hover:bg-red-500 text-white font-medium py-1 px-3 rounded transition"
-                  >
-                    Delete Post
-                  </button>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-
-        {/* Pagination Buttons */}
-        <div className="flex justify-center gap-4 my-6">
-          <button
-            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-            disabled={page === 1}
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          <button
-            onClick={() => {
-              if (!hasNextPage) {
-                toast.warning("You are already on the last page.");
-                return;
-              }
-              setPage((prev) => prev + 1);
-            }}
-            disabled={!hasNextPage}
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
-        </div>
-      </div>
+      <PostList
+        title="Past Posts"
+        filterFunction={filterPastPosts}
+        POSTS_PER_PAGE={POSTS_PER_PAGE}
+      />
     </div>
   );
 };

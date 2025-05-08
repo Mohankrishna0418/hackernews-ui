@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { auth, url } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
+import { serverUrl } from "@/lib/evironment";
 
 type Post = {
   id: string;
@@ -32,7 +33,7 @@ export default function PostPage() {
 
     async function fetchPost() {
       try {
-        const res = await fetch(`${url}/posts/${postId}`, {
+        const res = await fetch(`${serverUrl}/posts/${postId}`, {
           method: "GET",
           credentials: "include",
         });
@@ -70,20 +71,20 @@ export default function PostPage() {
     <div className="bg-gray-900 text-white min-h-screen">
       <NavigationBar />
       <div className="p-8 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-6 text-white leading-tight">
+        <h1 className="text-4xl font-bold mb-6 text-indigo-400 leading-tight">
           {post?.title}
         </h1>
         <p className="text-sm text-gray-400 mb-10">
           Posted by{" "}
           <a
-            href={`/profile/${post?.author?.username}`}
+            href={`/users/${post?.author?.username}`}
             className="text-blue-400 hover:underline"
           >
             @{post?.author?.username}
           </a>{" "}
           on {new Date(post?.createdAt || "").toLocaleDateString()}
         </p>
-        <div className="bg-gray-800 p-6 rounded-md text-gray-200 text-justify shadow-md">
+        <div className="bg-gray-800 p-6 rounded-md text-gray-300 text-justify shadow-md">
           {post?.content}
         </div>
       </div>
