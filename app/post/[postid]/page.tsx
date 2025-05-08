@@ -77,10 +77,10 @@ export default function PostPage() {
         <p className="text-sm text-gray-400 mb-10">
           Posted by{" "}
           <a
-            href={`/users/${post?.author?.username}`}
+            href={`/users/${post?.author?.name}`}
             className="text-blue-400 hover:underline"
           >
-            @{post?.author?.username}
+            @{post?.author?.name}
           </a>{" "}
           on {new Date(post?.createdAt || "").toLocaleDateString()}
         </p>

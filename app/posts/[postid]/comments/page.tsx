@@ -189,7 +189,7 @@ const CommentsPage: React.FC = () => {
               )}
             </p>
             <span className="text-sm text-gray-500">
-              By {post.author?.username} on{" "}
+              By {post.author?.name} on{" "}
               {new Date(post.createdAt).toLocaleString()}
             </span>
 
