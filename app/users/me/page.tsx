@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
-import { auth, url } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
+import { serverUrl } from "@/lib/evironment";
 
 interface Post {
   id: string;
@@ -49,13 +50,9 @@ const UserProfilePage: React.FC = () => {
     const fetchProfile = async () => {
       if (!token) return;
       try {
-        const res = await fetch(`${url}/users/me`, {
+        const res = await fetch(`${serverUrl}/users/me`, {
           method: "GET",
           credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            token,
-          },
         });
 
         if (!res.ok) {
@@ -91,13 +88,9 @@ const UserProfilePage: React.FC = () => {
     if (!profile) return;
 
     try {
-      const res = await fetch(`${url}/users/me`, {
+      const res = await fetch(`${serverUrl}/users/me`, {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          token,
-        },
         body: JSON.stringify({ about: aboutInput }),
       });
 
@@ -109,7 +102,7 @@ const UserProfilePage: React.FC = () => {
       const updatedProfile = { ...profile, about: aboutInput };
       setProfile(updatedProfile);
       setEditMode(false);
-      router.push(`/profile/me`);
+      router.push(`/users/me`);
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred";
@@ -187,19 +180,19 @@ const UserProfilePage: React.FC = () => {
 
             <div className="flex flex-row gap-4">
               <Link
-                href="/profile/me/posts"
+                href="/users/me/posts"
                 className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-500 transition"
               >
                 View Posts
               </Link>
               <Link
-                href="/profile/me/comments"
+                href="/users/me/comments"
                 className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-500 transition"
               >
                 View Comments
               </Link>
               <Link
-                href="/profile/me/likes"
+                href="/users/me/likes"
                 className="bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-500 transition"
               >
                 View Likes

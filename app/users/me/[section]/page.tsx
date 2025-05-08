@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { auth, url } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
+import { serverUrl } from "@/lib/evironment";
 
 interface Post {
   id: string;
@@ -47,15 +48,13 @@ const UserProfileSectionPage = () => {
     const fetchData = async () => {
       try {
         const [profileRes, postsRes] = await Promise.all([
-          fetch(`${url}/users/me`, {
+          fetch(`${serverUrl}/users/me`, {
             method: "GET",
             credentials: "include",
-            headers: { "Content-Type": "application/json", token },
           }),
-          fetch(`${url}/posts`, {
+          fetch(`${serverUrl}/posts`, {
             method: "GET",
             credentials: "include",
-            headers: { "Content-Type": "application/json", token },
           }),
         ]);
 
@@ -81,8 +80,8 @@ const UserProfileSectionPage = () => {
 
   if (loading) {
     return (
-      <div className="p-6 text-center text-gray-400 bg-gray-900 min-h-screen">
-        Loading user data...
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
@@ -110,7 +109,7 @@ const UserProfileSectionPage = () => {
       <NavigationBar />
       <div className="p-6 max-w-4xl mx-auto">
         <button
-          onClick={() => router.push("/profile/me")}
+          onClick={() => router.push("/users/me")}
           className="mb-6 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm transition"
         >
           ← Back to Profile
@@ -127,7 +126,7 @@ const UserProfileSectionPage = () => {
               >
                 <h3 className="font-semibold text-lg text-white mb-1">
                   {index + 1}.{" "}
-                  <span className="hover:underline decoration-white cursor-pointer">
+                  <span className="text-indigo-400 hover:underline hover:text-indigo-300 cursor-pointer">
                     {post.title}
                   </span>
                 </h3>

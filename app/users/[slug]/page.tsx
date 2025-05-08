@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
-import { url } from "@/lib/auth";
+import { serverUrl } from "@/lib/evironment";
 
 interface Comment {
   id: string;
@@ -22,6 +22,9 @@ interface Post {
   content: string;
   createdAt: string;
   likeCount: number;
+  author: {
+    name: string;
+  };
 }
 
 interface Like {
@@ -34,6 +37,7 @@ interface Like {
 
 const UserProfilePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const decodedSlug = decodeURIComponent(slug);
   const router = useRouter();
 
   const [userPosts, setUserPosts] = useState<Post[]>([]);
@@ -50,15 +54,15 @@ const UserProfilePage: React.FC = () => {
 
       try {
         const [postsRes, commentsRes, likesRes] = await Promise.all([
-          fetch(`${url}/posts/by/${slug}`, {
+          fetch(`${serverUrl}/posts/by/${slug}`, {
             method: "GET",
             credentials: "include",
           }),
-          fetch(`${url}/comments/by/${slug}`, {
+          fetch(`${serverUrl}/comments/by/${slug}`, {
             method: "GET",
             credentials: "include",
           }),
-          fetch(`${url}/likes/by/${slug}`, {
+          fetch(`${serverUrl}/likes/by/${slug}`, {
             method: "GET",
             credentials: "include",
           }),
@@ -91,7 +95,7 @@ const UserProfilePage: React.FC = () => {
           onClick={() => router.refresh()}
           className="text-lg font-bold mb-8 cursor-pointer hover:underline decoration-gray-400"
         >
-          Profile: {slug}
+          Profile: {decodedSlug}
         </h2>
 
         {error && <p className="text-red-400 mb-4">{error}</p>}
