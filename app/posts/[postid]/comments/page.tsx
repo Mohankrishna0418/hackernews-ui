@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { auth, url } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
+import { serverUrl } from "@/lib/evironment";
 
 interface Comment {
   id: string;
@@ -49,15 +50,15 @@ const CommentsPage: React.FC = () => {
     const fetchEverything = async () => {
       try {
         const [postsRes, postRes, commentsRes] = await Promise.all([
-          fetch(`${url}/posts`, {
+          fetch(`${serverUrl}/posts`, {
             method: "GET",
             credentials: "include",
           }),
-          fetch(`${url}/posts/${postId}`, {
+          fetch(`${serverUrl}/posts/${postId}`, {
             method: "GET",
             credentials: "include",
           }),
-          fetch(`${url}/comments/on/${postId}`, {
+          fetch(`${serverUrl}/comments/on/${postId}`, {
             method: "GET",
             credentials: "include",
           }),
@@ -86,13 +87,9 @@ const CommentsPage: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`${url}/comments/${commentId}`, {
+      const res = await fetch(`${serverUrl}/comments/${commentId}`, {
         method: "DELETE",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          token,
-        },
       });
 
       if (!res.ok) {
@@ -100,7 +97,6 @@ const CommentsPage: React.FC = () => {
         throw new Error(data.error || "Failed to delete comment");
       }
 
-      // After delete, refetch comments
       setComments((prev) => prev.filter((comment) => comment.id !== commentId));
     } catch (err: unknown) {
       const errorMessage =
@@ -119,13 +115,9 @@ const CommentsPage: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`${url}/comments/on/${postId}`, {
+      const res = await fetch(`${serverUrl}/comments/on/${postId}`, {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          token,
-        },
         body: JSON.stringify({ content: newComment }),
       });
 
@@ -135,10 +127,13 @@ const CommentsPage: React.FC = () => {
       }
 
       setNewComment("");
-      const updatedCommentsRes = await fetch(`${url}/comments/on/${postId}`, {
-        method: "GET",
-        credentials: "include",
-      });
+      const updatedCommentsRes = await fetch(
+        `${serverUrl}/comments/on/${postId}`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
       const updatedCommentsData = await updatedCommentsRes.json();
       setComments(updatedCommentsData?.comments ?? []);
     } catch (err) {
@@ -147,7 +142,6 @@ const CommentsPage: React.FC = () => {
     }
   };
 
-  // Find Post Number only when allPosts is ready
   const postNumber =
     post && allPosts.length > 0
       ? allPosts.findIndex((p) => p.id === post.id) + 1
@@ -206,14 +200,14 @@ const CommentsPage: React.FC = () => {
                   {comments.map((comment) => (
                     <div key={comment.id} className="border-b py-3">
                       <p className="text-md">
-                        <strong>{comment.user.username}</strong>:{" "}
+                        <strong>{comment.user.name}</strong>:{" "}
                         {comment.content}
                       </p>
                       <span className="text-xs text-gray-400">
                         {new Date(comment.createdAt).toLocaleString()}
                       </span>
-                      {sessionData?.user?.username ===
-                        comment.user.username && (
+                      {sessionData?.user?.name ===
+                        comment.user.name && (
                         <button
                           onClick={() => handleDeleteComment(comment.id)}
                           className="ml-2 text-red-400 hover:underline text-xs"

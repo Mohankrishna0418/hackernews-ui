@@ -1,9 +1,8 @@
-// LikeButton.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { url } from "@/lib/auth";
 import { toast, Toaster } from "sonner";
+import { serverUrl } from "@/lib/evironment";
 interface LikeButtonProps {
   postId: string;
   likedByUser: boolean;
@@ -35,13 +34,9 @@ const LikeButton: React.FC<LikeButtonProps> = ({
     }
 
     try {
-      const res = await fetch(`${url}/likes/on/${postId}`, {
+      const res = await fetch(`${serverUrl}/likes/on/${postId}`, {
         method: isLiked ? "DELETE" : "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          token,
-        },
       });
 
       if (!res.ok) {
@@ -54,7 +49,6 @@ const LikeButton: React.FC<LikeButtonProps> = ({
       setLikes(newLikeState ? likes + 1 : likes - 1);
       onLikeChange(postId, newLikeState);
 
-      // Trigger a toast notification for like/unlike action
       toast(newLikeState ? "Post liked!" : "Post unliked!", {
         duration: 3000,
         position: "bottom-right",

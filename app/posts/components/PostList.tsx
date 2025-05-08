@@ -2,19 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, url } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import LikeButton from "./LikeButton";
 import { toast } from "sonner";
-
-interface Comment {
-  id: string;
-  content: string;
-  createdAt: string;
-  user: {
-    username: string;
-    name?: string;
-  };
-}
+import { serverUrl } from "@/lib/evironment";
 
 interface Post {
   id: string;
@@ -27,11 +18,20 @@ interface Post {
   };
   likedByUser: boolean;
   likeCount: number;
-  comments: Comment[];
   number?: number;
 }
 
-const PostList: React.FC = () => {
+interface PostListComponentProps {
+  title: string;
+  filterFunction?: (post: Post) => boolean;
+  POSTS_PER_PAGE: number;
+}
+
+const PostList: React.FC<PostListComponentProps> = ({
+  title,
+  filterFunction,
+  POSTS_PER_PAGE,
+}) => {
   const router = useRouter();
   const { data: sessionData } = auth.useSession();
   const token = sessionData?.session?.token || "";
@@ -41,25 +41,19 @@ const PostList: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(true);
 
-  const POSTS_PER_PAGE = 4;
-
   useEffect(() => {
-    const fetchPostsAndLikes = async () => {
+    const fetchPosts = async () => {
       setLoading(true);
       try {
         const [postsRes, likesRes] = await Promise.all([
-          fetch(`${url}/posts?page=${page}&limit=${POSTS_PER_PAGE}`, {
+          fetch(`${serverUrl}/posts?page=${page}&limit=${POSTS_PER_PAGE}`, {
             method: "GET",
             credentials: "include",
           }),
           token
-            ? fetch(`${url}/likes/me`, {
+            ? fetch(`${serverUrl}/likes/me`, {
                 method: "GET",
                 credentials: "include",
-                headers: {
-                  "Content-Type": "application/json",
-                  token,
-                },
               })
             : Promise.resolve(null),
         ]);
@@ -76,7 +70,11 @@ const PostList: React.FC = () => {
               )
             : [];
 
-        const postsWithMeta = fetchedPosts.map((post, index) => ({
+        const filteredPosts = filterFunction
+          ? fetchedPosts.filter(filterFunction)
+          : fetchedPosts;
+
+        const postsWithMeta = filteredPosts.map((post, index) => ({
           ...post,
           likedByUser: userLikes.includes(post.id),
           number: (page - 1) * POSTS_PER_PAGE + (index + 1),
@@ -94,8 +92,8 @@ const PostList: React.FC = () => {
       }
     };
 
-    fetchPostsAndLikes();
-  }, [page, token]);
+    fetchPosts();
+  }, [page, token, filterFunction, POSTS_PER_PAGE]);
 
   const handleDeletePost = async (postId: string) => {
     if (!token) {
@@ -104,13 +102,9 @@ const PostList: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`${url}/posts/${postId}`, {
+      const res = await fetch(`${serverUrl}/posts/${postId}`, {
         method: "DELETE",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          token,
-        },
       });
 
       if (!res.ok) {
@@ -134,9 +128,7 @@ const PostList: React.FC = () => {
           return {
             ...post,
             likedByUser,
-            likeCount: likedByUser
-              ? post.likeCount + 1
-              : post.likeCount - 1,
+            likeCount: likedByUser ? post.likeCount + 1 : post.likeCount - 1,
           };
         }
         return post;
@@ -147,16 +139,13 @@ const PostList: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
       <div className="p-5 max-w-4xl mx-auto">
-        <h2
-          onClick={() => router.refresh()}
-          className="pl-7 text-left text-xl font-bold mb-4 text-indigo-400 hover:underline cursor-pointer"
-        >
-          Recent Posts
+        <h2 className="pl-7 text-left text-xl font-bold mb-4 text-indigo-400 hover:underline cursor-pointer">
+          {title}
         </h2>
 
         {loading ? (
           <div className="flex justify-center items-center my-10">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>{" "}
           </div>
         ) : posts.length === 0 ? (
           <p>No posts available.</p>
@@ -195,11 +184,11 @@ const PostList: React.FC = () => {
               <div className="text-xs text-gray-400 px-3">
                 By{" "}
                 <a
-                  href={`/profile/${post.user.username}`}
+                  href={`/users/${post.user.name}`}
                   className="text-indigo-400 hover:text-indigo-300 hover:underline"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  @{post.user.username}
+                  @{post.user.name}
                 </a>{" "}
                 on {new Date(post.createdAt).toLocaleString()}
               </div>
@@ -224,16 +213,16 @@ const PostList: React.FC = () => {
                   Comments
                 </a>
 
-                {sessionData?.user?.username === post.user.username && (
-                  <button
+                {sessionData?.user?.name === post.user.name && (
+                  <span
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeletePost(post.id);
                     }}
-                    className="bg-red-600 hover:bg-red-500 text-white font-medium py-1 px-3 rounded transition"
+                    className="text-red-500 font-medium py-1 rounded transition hover:cursor-pointer"
                   >
                     Delete Post
-                  </button>
+                  </span>
                 )}
               </div>
             </div>
