@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { auth } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 import PostCard from "./components/PostCard";
-import { serverUrl } from "@/lib/evironment";
+import { serverUrl } from "@/lib/environment";
 
 interface Comment {
   id: string;

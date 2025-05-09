@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { auth } from "@/lib/auth";
 import LikeButton from "./LikeButton";
 import { toast } from "sonner";
-import { serverUrl } from "@/lib/evironment";
+import { serverUrl } from "@/lib/environment";
 
 interface Post {
   id: string;

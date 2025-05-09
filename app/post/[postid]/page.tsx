@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { auth } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
-import { serverUrl } from "@/lib/evironment";
+import { serverUrl } from "@/lib/environment";
 
 type Post = {
   id: string;

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
-import { serverUrl } from "@/lib/evironment";
+import { serverUrl } from "@/lib/environment";
 
 interface Comment {
   id: string;

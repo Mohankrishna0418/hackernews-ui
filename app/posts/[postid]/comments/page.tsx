@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { auth } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
-import { serverUrl } from "@/lib/evironment";
+import { serverUrl } from "@/lib/environment";
 
 interface Comment {
   id: string;
@@ -200,14 +200,12 @@ const CommentsPage: React.FC = () => {
                   {comments.map((comment) => (
                     <div key={comment.id} className="border-b py-3">
                       <p className="text-md">
-                        <strong>{comment.user.name}</strong>:{" "}
-                        {comment.content}
+                        <strong>{comment.user.name}</strong>: {comment.content}
                       </p>
                       <span className="text-xs text-gray-400">
                         {new Date(comment.createdAt).toLocaleString()}
                       </span>
-                      {sessionData?.user?.name ===
-                        comment.user.name && (
+                      {sessionData?.user?.name === comment.user.name && (
                         <button
                           onClick={() => handleDeleteComment(comment.id)}
                           className="ml-2 text-red-400 hover:underline text-xs"

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { serverUrl } from "@/lib/evironment";
+import { serverUrl } from "@/lib/environment";
 
 interface Post {
   id: string;

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { toast, Toaster } from "sonner";
-import { serverUrl } from "@/lib/evironment";
+import { serverUrl } from "@/lib/environment";
 interface LikeButtonProps {
   postId: string;
   likedByUser: boolean;

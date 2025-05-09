@@ -1,5 +1,5 @@
 import { createAuthClient } from "better-auth/react";
-import { serverUrl } from "./evironment";
+import { serverUrl } from "./environment";
 import { nextCookies } from "better-auth/next-js";
 
 export const auth = createAuthClient({

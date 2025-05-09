@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { auth } from "@/lib/auth";
 import { toast, Toaster } from "sonner";
 import { useRouter } from "next/navigation";
-import { serverUrl } from "@/lib/evironment";
+import { serverUrl } from "@/lib/environment";
 
 const NewPostForm: React.FC = () => {
   const router = useRouter();
