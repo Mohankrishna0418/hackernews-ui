@@ -10,7 +10,7 @@ interface Post {
   createdAt: string;
 }
 
-const POSTS_PER_PAGE = 5;
+const POSTS_PER_PAGE = 10;
 
 const NewPostsPage: React.FC = () => {
   const filterTodayPosts = (post: Post) => {
