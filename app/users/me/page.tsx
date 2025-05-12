@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 import { auth } from "@/lib/auth";
@@ -120,7 +120,9 @@ const UserProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
-      <NavigationBar />
+      <Suspense fallback={null}>
+        <NavigationBar />
+      </Suspense>
       <div className="p-5 pb-10 max-w-4xl mx-auto">
         <h2 className="text-2xl font-bold mb-6 hover:underline decoration-white/50 cursor-pointer">
           My Profile

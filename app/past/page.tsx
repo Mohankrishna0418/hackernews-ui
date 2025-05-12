@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import PostList from "../posts/components/PostList";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 interface Post {
@@ -21,7 +21,9 @@ const PastPostsPage: React.FC = () => {
 
   return (
     <div>
-      <NavigationBar />
+      <Suspense fallback={null}>
+        <NavigationBar />
+      </Suspense>
       <PostList
         title="Past Posts"
         filterFunction={filterPastPosts}

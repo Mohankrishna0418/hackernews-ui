@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { auth } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
@@ -149,7 +149,9 @@ const CommentsPage: React.FC = () => {
 
   return (
     <div className="bg-gray-900 min-h-screen text-gray-100">
-      <NavigationBar />
+      <Suspense fallback={null}>
+        <NavigationBar />
+      </Suspense>
       <div className="p-5 max-w-4xl mx-auto">
         <button
           onClick={() => router.back()}

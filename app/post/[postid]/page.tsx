@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { FaArrowLeft } from "react-icons/fa";
+import { useParams, useRouter } from "next/navigation";
 import { auth } from "@/lib/auth";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
 import { serverUrl } from "@/lib/environment";
@@ -18,6 +19,7 @@ type Post = {
 };
 
 export default function PostPage() {
+  const router = useRouter();
   const { postId } = useParams<{ postId: string }>();
   const { data: sessionData } = auth.useSession();
   const token = sessionData?.session?.token ?? "";
@@ -59,7 +61,9 @@ export default function PostPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 text-white">
-        <NavigationBar />
+        <Suspense fallback={null}>
+          <NavigationBar />
+        </Suspense>
         <div className="p-8">
           <p className="text-red-400 text-center text-lg">{error}</p>
         </div>
@@ -69,9 +73,21 @@ export default function PostPage() {
 
   return (
     <div className="bg-gray-900 text-white min-h-screen">
-      <NavigationBar />
+      <Suspense fallback={null}>
+        <NavigationBar />
+      </Suspense>
       <div className="p-8 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-6 text-indigo-400 leading-tight">
+        <button
+          className="bg-indigo-700 hover:bg-indigo-600 text-white font-semibold py-1 px-2 rounded mb-4 flex items-center"
+          onClick={() => router.back()}
+        >
+          <FaArrowLeft size={12} className="mr-2" />
+          Go Back
+        </button>
+        <h1
+          onClick={() => router.push(`/posts/${post?.id}/comments`)}
+          className="text-2xl font-bold mb-6 text-indigo-400 leading-tight cursor-pointer"
+        >
           {post?.title}
         </h1>
         <p className="text-sm text-gray-400 mb-10">

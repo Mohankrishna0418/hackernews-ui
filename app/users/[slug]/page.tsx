@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import NavigationBar from "@/components/navigation-bar/NavigationBar";
@@ -89,7 +89,9 @@ const UserProfilePage: React.FC = () => {
 
   return (
     <div className="mb-10 min-h-screen bg-gray-900 text-white">
-      <NavigationBar />
+      <Suspense fallback={null}>
+        <NavigationBar />
+      </Suspense>
       <div className="p-6 max-w-4xl mx-auto">
         <h2
           onClick={() => router.refresh()}
