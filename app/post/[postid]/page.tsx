@@ -82,7 +82,7 @@ export default function PostPage() {
           onClick={() => router.back()}
         >
           <FaArrowLeft size={12} className="mr-2" />
-          Go Back
+          Back
         </button>
         <h1
           onClick={() => router.push(`/posts/${post?.id}/comments`)}
