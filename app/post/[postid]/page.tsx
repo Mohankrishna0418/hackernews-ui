@@ -39,7 +39,6 @@ export default function PostPage() {
           method: "GET",
           credentials: "include",
         });
-
         if (!res.ok) {
           throw new Error("Failed to fetch post");
         }
